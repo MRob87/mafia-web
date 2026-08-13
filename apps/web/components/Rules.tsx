@@ -40,20 +40,20 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
           <p className="font-semibold text-slate-100">Roles:</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
             <li>
-              <strong className="text-rose-400">Mafia</strong> — Each night, agree on a player to eliminate. You
+              <strong className="text-rose-400">🔪 Mafia</strong> — Each night, agree on a player to eliminate. You
               know who your fellow Mafia are and have a private Mafia Chat to coordinate.
             </li>
             <li>
-              <strong className="text-emerald-400">Doctor</strong> — Each night, choose a player to protect from the
-              Mafia's kill. You may protect yourself.
+              <strong className="text-emerald-400">🩺 Doctor</strong> — Each night, choose a player to protect from
+              the Mafia's kill. You may protect yourself.
             </li>
             <li>
-              <strong className="text-sky-400">Detective</strong> — Each night, investigate a player to privately
+              <strong className="text-sky-400">🔍 Detective</strong> — Each night, investigate a player to privately
               learn whether they're Mafia.
             </li>
             <li>
-              <strong className="text-slate-300">Villager</strong> — No special ability. Discussion and voting are
-              your only tools.
+              <strong className="text-slate-300">🧑 Villager</strong> — No special ability. Discussion and voting
+              are your only tools.
             </li>
           </ul>
         </div>

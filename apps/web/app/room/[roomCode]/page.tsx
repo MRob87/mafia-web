@@ -37,6 +37,13 @@ const ROLE_COLORS: Record<string, string> = {
   villager: 'text-slate-300',
 };
 
+const ROLE_EMOJI: Record<string, string> = {
+  mafia: '🔪',
+  doctor: '🩺',
+  detective: '🔍',
+  villager: '🧑',
+};
+
 function formatRemaining(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -354,7 +361,7 @@ export default function RoomPage() {
               <p className="mt-3 text-sm">
                 Your role:{' '}
                 <span className={`font-semibold ${ROLE_COLORS[view.self.role] ?? 'text-slate-200'}`}>
-                  {view.self.role}
+                  {ROLE_EMOJI[view.self.role] ?? ''} {view.self.role}
                 </span>
               </p>
               {roleInstructions(view.phase, view.self.role, view.self.isAlive) && (
