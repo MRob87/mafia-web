@@ -143,6 +143,25 @@ export default function RoomPage() {
     });
     socket.on('error', (payload) => setError(payload.message));
     socket.on('connect_error', (err) => setError(`Can't reach the game server (${err.message}).`));
+
+    // Fetch current state — on the initial mount, and again on every (re)connect. A phone
+    // locking its screen kills the underlying connection; socket.io auto-reconnects, but
+    // without this we'd clear neither the stale error message nor any state we missed while
+    // disconnected (a phase change, a death, chat) — the page would just look frozen/wrong.
+    const syncRoom = () => {
+      socket.emit('room:sync', { roomCode: s.roomCode, userId: s.userId }, (res) => {
+        if (!res.ok) {
+          setError(res.error);
+          return;
+        }
+        setError(null);
+        setRoom(res.room);
+        if (res.view) setView(res.view);
+      });
+    };
+    socket.on('connect', syncRoom);
+    syncRoom();
+
     socket.on('chat:message', (msg) =>
       setChat((prev) => [...prev, { userId: msg.fromUserId, displayName: msg.displayName, text: msg.text }])
     );
@@ -151,19 +170,8 @@ export default function RoomPage() {
     );
     socket.on('game:mafiaNightStatus', (status) => setMafiaTargets(status.targets));
 
-    // Fetch current state immediately instead of waiting on a broadcast — a broadcast
-    // fired right after room:create/room:join can arrive before this listener is
-    // attached (e.g. while the route is still mounting) and would otherwise be missed.
-    socket.emit('room:sync', { roomCode: s.roomCode, userId: s.userId }, (res) => {
-      if (!res.ok) {
-        setError(res.error);
-        return;
-      }
-      setRoom(res.room);
-      if (res.view) setView(res.view);
-    });
-
     return () => {
+      socket.off('connect', syncRoom);
       socket.off('room:updated', handleRoomUpdated);
       socket.off('game:view', setView);
       socket.off('room:kicked');

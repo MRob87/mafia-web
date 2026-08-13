@@ -21,9 +21,15 @@ export default function HomePage() {
       setPending(false);
       setError(`Can't reach the game server (${err.message}). Check you're using the right address.`);
     };
+    // A dropped connection (e.g. the phone's screen locking) auto-reconnects via socket.io —
+    // without this, a connect_error shown earlier would just sit there forever even after
+    // the connection actually recovered.
+    const handleConnect = () => setError(null);
     socket.on('connect_error', handleConnectError);
+    socket.on('connect', handleConnect);
     return () => {
       socket.off('connect_error', handleConnectError);
+      socket.off('connect', handleConnect);
     };
   }, []);
 
