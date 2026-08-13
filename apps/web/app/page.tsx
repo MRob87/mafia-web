@@ -7,6 +7,8 @@ import { saveSession } from '../lib/session';
 import { Rules } from '../components/Rules';
 import type { Room } from '@mafia/shared';
 
+const NIGHT_DURATION_OPTIONS = [15, 30, 45, 60];
+
 export default function HomePage() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
@@ -89,17 +91,25 @@ export default function HomePage() {
           className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none focus:border-indigo-500"
         />
 
-        <label className="block text-sm text-slate-400">
-          Night timer (seconds)
-          <input
-            type="number"
-            min={10}
-            max={120}
-            value={nightDurationSeconds}
-            onChange={(e) => setNightDurationSeconds(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none focus:border-indigo-500"
-          />
-        </label>
+        <div>
+          <p className="text-sm text-slate-400">Night timer (seconds)</p>
+          <div className="mt-1 grid grid-cols-4 gap-2">
+            {NIGHT_DURATION_OPTIONS.map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                onClick={() => setNightDurationSeconds(seconds)}
+                className={
+                  seconds === nightDurationSeconds
+                    ? 'rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white'
+                    : 'rounded-lg border border-slate-700 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800'
+                }
+              >
+                {seconds}s
+              </button>
+            ))}
+          </div>
+        </div>
 
         <button
           onClick={handleCreate}
