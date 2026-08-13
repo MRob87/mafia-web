@@ -10,6 +10,7 @@ export default function HomePage() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
   const [roomCode, setRoomCode] = useState('');
+  const [nightDurationSeconds, setNightDurationSeconds] = useState(30);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -25,7 +26,7 @@ export default function HomePage() {
     }
     setPending(true);
     setError(null);
-    getSocket().emit('room:create', { displayName }, (res) => {
+    getSocket().emit('room:create', { displayName, nightDurationSeconds }, (res) => {
       setPending(false);
       if (!res.ok) {
         setError(res.error);
@@ -100,6 +101,18 @@ export default function HomePage() {
         onChange={(e) => setDisplayName(e.target.value)}
         style={{ width: '100%', padding: 10, marginBottom: 12 }}
       />
+
+      <label style={{ display: 'block', fontSize: 14, opacity: 0.85, marginBottom: 12 }}>
+        Night timer (seconds)
+        <input
+          type="number"
+          min={10}
+          max={120}
+          value={nightDurationSeconds}
+          onChange={(e) => setNightDurationSeconds(Number(e.target.value))}
+          style={{ width: '100%', padding: 10, marginTop: 4 }}
+        />
+      </label>
 
       <button onClick={handleCreate} disabled={pending} style={{ width: '100%', padding: 10, marginBottom: 24 }}>
         Create Room

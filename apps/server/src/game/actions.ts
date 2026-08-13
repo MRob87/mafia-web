@@ -41,6 +41,13 @@ export function resolveNightActions(game: GameInstance): void {
       timestamp: nowIso(),
     };
     game.eventLog.push(event);
+  } else {
+    game.eventLog.push({
+      type: 'system',
+      visibility: 'public',
+      payload: { message: 'No one died during the night.' },
+      timestamp: nowIso(),
+    });
   }
 
   for (const check of detectiveChecks) {
@@ -63,6 +70,7 @@ export function resolveDayVote(game: GameInstance): void {
 
   if (eliminated && game.players[eliminated]?.isAlive) {
     game.players[eliminated].isAlive = false;
+    game.lastEliminatedId = eliminated;
     const event: GameEvent = {
       type: 'death',
       visibility: 'public',
@@ -70,6 +78,16 @@ export function resolveDayVote(game: GameInstance): void {
       timestamp: nowIso(),
     };
     game.eventLog.push(event);
+  } else {
+    game.lastEliminatedId = null;
+    game.eventLog.push({
+      type: 'system',
+      visibility: 'public',
+      payload: {
+        message: votes.length === 0 ? 'No votes were cast.' : 'The vote was tied — no one was eliminated.',
+      },
+      timestamp: nowIso(),
+    });
   }
 
   game.dayVotes = {};

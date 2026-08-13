@@ -1,11 +1,24 @@
-import type { Phase } from '@mafia/shared';
+import type { GameInstance, Phase } from '@mafia/shared';
 
-// Tunable durations. Kept short for dev/smoke-testing; raise for real play.
+export const DEFAULT_NIGHT_DURATION_MS = 30_000;
+
+// Tunable durations. Kept short for dev/smoke-testing; raise for real play. `night` here is
+// only the fallback default — the actual value used per game is GameInstance.nightDurationMs,
+// set at room creation (see phaseDurationMs below).
 export const PHASE_DURATIONS_MS: Partial<Record<Phase, number>> = {
-  night: 20_000,
+  night: DEFAULT_NIGHT_DURATION_MS,
+  night_resolution: 5_000,
   day_discussion: 60_000,
   day_voting: 30_000,
+  // Long enough to also cover last-words: an eliminated player gets this whole window to type.
+  elimination: 12_000,
 };
+
+/** Resolves the actual duration for a timed phase, honoring the per-game night override. */
+export function phaseDurationMs(phase: Phase, game: GameInstance): number {
+  if (phase === 'night' && game.nightDurationMs) return game.nightDurationMs;
+  return PHASE_DURATIONS_MS[phase]!;
+}
 
 const PHASE_ORDER: Phase[] = [
   'night',
@@ -16,8 +29,9 @@ const PHASE_ORDER: Phase[] = [
 ];
 
 /**
- * night_resolution and elimination are instantaneous server computations, not
- * timed phases — advancePhase resolves them and moves straight through.
+ * night_resolution and elimination carry no extra computation of their own (that already
+ * happened when leaving night/day_voting) — they're brief timed phases that exist so
+ * clients have a beat to show what just happened before the cycle continues.
  */
 export function nextPhase(current: Phase): Phase {
   if (current === 'lobby' || current === 'role_assign') return 'night';

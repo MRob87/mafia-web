@@ -8,6 +8,14 @@ interface UserRecord extends User {
 
 const DEFAULT_MAX_PLAYERS = 12;
 const DEFAULT_MIN_PLAYERS = 5;
+const DEFAULT_NIGHT_DURATION_SECONDS = 30;
+const MIN_NIGHT_DURATION_SECONDS = 10;
+const MAX_NIGHT_DURATION_SECONDS = 120;
+
+function clampNightDuration(seconds: number | undefined): number {
+  if (seconds === undefined || Number.isNaN(seconds)) return DEFAULT_NIGHT_DURATION_SECONDS;
+  return Math.min(MAX_NIGHT_DURATION_SECONDS, Math.max(MIN_NIGHT_DURATION_SECONDS, Math.round(seconds)));
+}
 
 // Classic-4 default ratio: roughly 1 mafia per 4 players, one doctor, one detective
 // once the lobby is large enough to support them; the rest are villagers.
@@ -21,6 +29,7 @@ function defaultRoleConfig(maxPlayers: number): RoleConfig {
 
 const rooms = new Map<string, Room>();
 const users = new Map<string, UserRecord>();
+const roleOverrides = new Map<string, Partial<RoleConfig>>();
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -28,13 +37,16 @@ function nowIso(): string {
 
 export function createRoom(
   displayName: string,
-  roleConfigOverride?: Partial<RoleConfig>
+  roleConfigOverride?: Partial<RoleConfig>,
+  nightDurationSecondsInput?: number
 ): { room: Room; userId: string } {
   let roomCode = generateRoomCode();
   while (rooms.has(roomCode)) roomCode = generateRoomCode();
 
   const hostId = crypto.randomUUID();
   const maxPlayers = DEFAULT_MAX_PLAYERS;
+
+  if (roleConfigOverride) roleOverrides.set(roomCode, roleConfigOverride);
 
   const room: Room = {
     roomCode,
@@ -45,6 +57,7 @@ export function createRoom(
     roleConfig: { ...defaultRoleConfig(maxPlayers), ...roleConfigOverride },
     playerIds: [hostId],
     players: [{ userId: hostId, displayName }],
+    nightDurationSeconds: clampNightDuration(nightDurationSecondsInput),
     createdAt: nowIso(),
   };
 
@@ -97,6 +110,7 @@ export function leaveRoom(userId: string): Room | null {
 
   if (room.playerIds.length === 0) {
     rooms.delete(room.roomCode);
+    roleOverrides.delete(room.roomCode);
     return null;
   }
   if (room.hostId === userId) {
@@ -132,7 +146,37 @@ export function detachSocket(socketId: string): { userId: string; roomCode: stri
   return null;
 }
 
+/**
+ * Recomputes the mafia/doctor/detective/villager ratio against the room's ACTUAL joined
+ * player count (not its lobby capacity) and applies it, preserving any explicit override
+ * passed at room creation. The lobby-time roleConfig is only a provisional placeholder —
+ * call this right before the game starts, once the final roster is known. Without this,
+ * a small room can silently draw zero mafia (the default ratio was sized for a full
+ * 12-seat room, then randomly sliced down to whoever actually joined).
+ */
+export function finalizeRoleConfig(room: Room): RoleConfig {
+  const override = roleOverrides.get(room.roomCode) ?? {};
+  const playerCount = room.playerIds.length;
+  const base = defaultRoleConfig(playerCount);
+  const mafia = override.mafia ?? base.mafia;
+  const doctor = override.doctor ?? base.doctor;
+  const detective = override.detective ?? base.detective;
+  // Only trust an explicit villager override if one was given — otherwise derive it so the
+  // total always matches the actual seat count exactly. A *partial* override (e.g. just
+  // {mafia: 2}) would otherwise leave villager at its full-lobby default, overflow the pool
+  // past playerCount, and let the random slice-to-fit in assignRoles() drop a "guaranteed" role.
+  const villager = override.villager ?? Math.max(0, playerCount - mafia - doctor - detective);
+  const config = { mafia, doctor, detective, villager };
+  room.roleConfig = config;
+  return config;
+}
+
 export function markRoomInProgress(roomCode: string): void {
   const room = rooms.get(roomCode);
   if (room) room.status = 'in_progress';
+}
+
+export function resetRoomToLobby(roomCode: string): void {
+  const room = rooms.get(roomCode);
+  if (room) room.status = 'lobby';
 }

@@ -39,6 +39,8 @@ export interface Room {
   playerIds: string[];
   /** Display names for playerIds, kept in the same order. Lets clients render names instead of raw ids. */
   players: Array<{ userId: string; displayName: string }>;
+  /** How long the night phase lasts once the game starts. Set at room creation; default 30. */
+  nightDurationSeconds: number;
   createdAt: string;
 }
 
@@ -56,7 +58,7 @@ export interface NightAction {
   submittedAt: string;
 }
 
-export type GameEventType = 'death' | 'vote' | 'phase_change' | 'accusation' | 'system';
+export type GameEventType = 'death' | 'vote' | 'phase_change' | 'accusation' | 'system' | 'last_words' | 'kicked';
 
 /** 'public' = visible to everyone; a Role[] restricts visibility to those roles only. */
 export type EventVisibility = 'public' | Role[];
@@ -86,6 +88,10 @@ export interface GameInstance {
   eventLog: GameEvent[];
   investigationResults: InvestigationResult[];
   winner: 'mafia' | 'villagers' | null;
+  /** Locked in from Room.nightDurationSeconds when the game starts. */
+  nightDurationMs: number;
+  /** Who the most recent day vote eliminated, if anyone — they get a last-words window. */
+  lastEliminatedId: string | null;
 }
 
 /**
@@ -114,4 +120,6 @@ export interface PlayerView {
   /** Present only for Detective after an investigation resolves. */
   lastInvestigationResult: { targetId: string; isMafia: boolean } | null;
   winner: 'mafia' | 'villagers' | null;
+  /** Who the most recent day vote eliminated, if anyone — drives the last-words prompt. */
+  lastEliminatedId: string | null;
 }

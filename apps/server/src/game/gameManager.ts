@@ -1,6 +1,6 @@
 import type { GameInstance, NightAction, Phase, Room, Role } from '@mafia/shared';
 import { assignRoles } from './roles.js';
-import { nextPhase, isTimedPhase, PHASE_DURATIONS_MS } from './stateMachine.js';
+import { nextPhase, isTimedPhase, phaseDurationMs } from './stateMachine.js';
 import { resolveNightActions, resolveDayVote, checkWinCondition } from './actions.js';
 
 const games = new Map<string, GameInstance>();
@@ -19,8 +19,9 @@ export function getGame(roomCode: string): GameInstance | undefined {
 function scheduleNextPhase(roomCode: string, phase: Phase): void {
   clearTimer(roomCode);
   if (!isTimedPhase(phase)) return;
-  const duration = PHASE_DURATIONS_MS[phase]!;
-  const timer = setTimeout(() => advancePhase(roomCode), duration);
+  const game = games.get(roomCode);
+  if (!game) return;
+  const timer = setTimeout(() => advancePhase(roomCode), phaseDurationMs(phase, game));
   timers.set(roomCode, timer);
 }
 
@@ -49,6 +50,8 @@ export function startGame(room: Room): GameInstance {
     eventLog: [],
     investigationResults: [],
     winner: null,
+    nightDurationMs: room.nightDurationSeconds * 1000,
+    lastEliminatedId: null,
   };
 
   games.set(room.roomCode, game);
@@ -59,7 +62,7 @@ export function startGame(room: Room): GameInstance {
 function transitionTo(game: GameInstance, phase: Phase): void {
   game.phase = phase;
   game.phaseEndsAt = isTimedPhase(phase)
-    ? new Date(Date.now() + PHASE_DURATIONS_MS[phase]!).toISOString()
+    ? new Date(Date.now() + phaseDurationMs(phase, game)).toISOString()
     : null;
   scheduleNextPhase(game.roomCode, phase);
 }
@@ -67,7 +70,7 @@ function transitionTo(game: GameInstance, phase: Phase): void {
 /** Advances the state machine one step. Resolves the phase being left, checks for a winner, then moves on. */
 export function advancePhase(roomCode: string): void {
   const game = games.get(roomCode);
-  if (!game) return;
+  if (!game || game.phase === 'game_over') return;
 
   if (game.phase === 'night') {
     resolveNightActions(game);
@@ -109,6 +112,50 @@ export function submitDayVote(roomCode: string, voterId: string, targetId: strin
   if (!game.players[voterId]?.isAlive) return 'Dead players cannot vote.';
 
   game.dayVotes[voterId] = targetId;
+  return null;
+}
+
+export function submitLastWords(roomCode: string, userId: string, text: string): string | null {
+  const game = games.get(roomCode);
+  if (!game) return 'Game not found.';
+  if (game.phase !== 'elimination') return 'Not the right moment for last words.';
+  if (game.lastEliminatedId !== userId) return 'Only the player who was just eliminated can speak here.';
+
+  const trimmed = text.trim().slice(0, 200);
+  if (!trimmed) return 'Say something first.';
+
+  game.eventLog.push({
+    type: 'last_words',
+    visibility: 'public',
+    payload: { actorId: userId, text: trimmed },
+    timestamp: new Date().toISOString(),
+  });
+  return null;
+}
+
+/** Host removal mid-game: eliminates the player (their role/history stays intact for
+ *  win-condition purposes) rather than deleting them outright. Re-checks the win condition,
+ *  since removing a Mafia member (or the last non-Mafia player) can end the game immediately. */
+export function kickPlayer(roomCode: string, userId: string): string | null {
+  const game = games.get(roomCode);
+  if (!game) return 'Game not found.';
+  const player = game.players[userId];
+  if (!player) return 'Player not found in this game.';
+  if (!player.isAlive) return null;
+
+  player.isAlive = false;
+  game.eventLog.push({
+    type: 'kicked',
+    visibility: 'public',
+    payload: { actorId: userId },
+    timestamp: new Date().toISOString(),
+  });
+
+  const winner = checkWinCondition(game);
+  if (winner) {
+    game.winner = winner;
+    transitionTo(game, 'game_over');
+  }
   return null;
 }
 

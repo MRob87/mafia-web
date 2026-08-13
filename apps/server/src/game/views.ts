@@ -40,5 +40,6 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
       ? { targetId: lastInvestigation.targetId, isMafia: lastInvestigation.isMafia }
       : null,
     winner: game.winner,
+    lastEliminatedId: game.lastEliminatedId,
   };
 }

@@ -33,12 +33,58 @@ function broadcastGameViews(io: IoServer, roomCode: string): void {
   }
 }
 
+function mafiaRoomName(roomCode: string): string {
+  return `${roomCode}:mafia`;
+}
+
+/** Pushes the Mafia team's current night target picks to their private room only. */
+function broadcastMafiaNightStatus(io: IoServer, roomCode: string): void {
+  const game = gameManager.getGame(roomCode);
+  if (!game) return;
+
+  const targets = game.nightActions
+    .filter((a) => a.role === 'mafia')
+    .map((a) => ({
+      actorId: a.actorId,
+      actorDisplayName: roomManager.getUser(a.actorId)?.displayName ?? 'Unknown',
+      targetId: a.targetId,
+      targetDisplayName: roomManager.getUser(a.targetId)?.displayName ?? 'Unknown',
+    }));
+
+  io.to(mafiaRoomName(roomCode)).emit('game:mafiaNightStatus', { targets });
+}
+
+/** Joins every Mafia player's current socket to the private mafia room, so their night
+ *  coordination (target visibility + mafia:chat) never reaches anyone else. Clears out
+ *  stale membership first — otherwise a player who was Mafia in a previous game (before a
+ *  restart) would keep overhearing the new game's private channel after roles reshuffle. */
+function joinMafiaRoom(io: IoServer, roomCode: string): void {
+  const game = gameManager.getGame(roomCode);
+  if (!game) return;
+
+  const roomName = mafiaRoomName(roomCode);
+  io.in(roomName).socketsLeave(roomName);
+
+  for (const player of Object.values(game.players)) {
+    if (player.role !== 'mafia') continue;
+    const socketId = roomManager.getUser(player.userId)?.socketId;
+    if (!socketId) continue;
+    io.sockets.sockets.get(socketId)?.join(roomName);
+  }
+}
+
 export function registerHandlers(io: IoServer): void {
-  gameManager.setPhaseChangeListener((roomCode) => broadcastGameViews(io, roomCode));
+  gameManager.setPhaseChangeListener((roomCode) => {
+    broadcastGameViews(io, roomCode);
+    // Fresh night — nightActions was just cleared, so this resets the mafia's live
+    // target panel instead of leaving the previous night's picks stale on screen.
+    const game = gameManager.getGame(roomCode);
+    if (game?.phase === 'night') broadcastMafiaNightStatus(io, roomCode);
+  });
 
   io.on('connection', (socket: IoSocket) => {
-    socket.on('room:create', ({ displayName, roleConfig }, ack) => {
-      const { room, userId } = roomManager.createRoom(displayName, roleConfig);
+    socket.on('room:create', ({ displayName, roleConfig, nightDurationSeconds }, ack) => {
+      const { room, userId } = roomManager.createRoom(displayName, roleConfig, nightDurationSeconds);
       roomManager.attachSocket(userId, socket.id);
       socket.data = { userId, roomCode: room.roomCode } satisfies SocketData;
       socket.join(room.roomCode);
@@ -75,6 +121,7 @@ export function registerHandlers(io: IoServer): void {
 
       const game = gameManager.getGame(roomCode);
       if (game) gameManager.setPlayerConnected(roomCode, userId, true);
+      if (game?.players[userId]?.role === 'mafia') socket.join(mafiaRoomName(roomCode));
       const view = game ? buildPlayerView(game, userId) : null;
 
       ack({ ok: true, room, view });
@@ -103,17 +150,78 @@ export function registerHandlers(io: IoServer): void {
         return;
       }
 
+      roomManager.finalizeRoleConfig(room);
       roomManager.markRoomInProgress(roomCode);
       gameManager.startGame(room);
+      joinMafiaRoom(io, roomCode);
       broadcastRoomUpdate(io, room);
       broadcastGameViews(io, roomCode);
+    });
+
+    socket.on('room:skipPhase', ({ roomCode }) => {
+      const { userId } = socketData(socket);
+      const room = roomManager.getRoom(roomCode);
+      if (!room || !userId) return;
+      if (room.hostId !== userId) {
+        socket.emit('error', { message: 'Only the host can skip the phase.' });
+        return;
+      }
+      gameManager.advancePhase(roomCode);
+    });
+
+    socket.on('room:kick', ({ roomCode, targetUserId }) => {
+      const { userId } = socketData(socket);
+      const room = roomManager.getRoom(roomCode);
+      if (!room || !userId) return;
+      if (room.hostId !== userId) {
+        socket.emit('error', { message: 'Only the host can remove players.' });
+        return;
+      }
+      if (targetUserId === userId) {
+        socket.emit('error', { message: "You can't remove yourself." });
+        return;
+      }
+
+      const targetSocketId = roomManager.getUser(targetUserId)?.socketId;
+      const game = gameManager.getGame(roomCode);
+      if (game) gameManager.kickPlayer(roomCode, targetUserId);
+
+      const updatedRoom = roomManager.leaveRoom(targetUserId);
+
+      if (targetSocketId) {
+        const targetSocket = io.sockets.sockets.get(targetSocketId);
+        targetSocket?.emit('room:kicked');
+        targetSocket?.leave(roomCode);
+        targetSocket?.leave(mafiaRoomName(roomCode));
+      }
+
+      if (updatedRoom) broadcastRoomUpdate(io, updatedRoom);
+      if (game) broadcastGameViews(io, roomCode);
+    });
+
+    socket.on('room:restart', ({ roomCode }) => {
+      const { userId } = socketData(socket);
+      const room = roomManager.getRoom(roomCode);
+      if (!room || !userId) return;
+      if (room.hostId !== userId) {
+        socket.emit('error', { message: 'Only the host can restart the game.' });
+        return;
+      }
+      gameManager.endGame(roomCode);
+      roomManager.resetRoomToLobby(roomCode);
+      broadcastRoomUpdate(io, room);
     });
 
     socket.on('night:action', ({ roomCode, targetId }) => {
       const { userId } = socketData(socket);
       if (!userId) return;
       const error = gameManager.submitNightAction(roomCode, userId, targetId);
-      if (error) socket.emit('error', { message: error });
+      if (error) {
+        socket.emit('error', { message: error });
+        return;
+      }
+      const game = gameManager.getGame(roomCode);
+      if (game?.players[userId]?.role === 'mafia') broadcastMafiaNightStatus(io, roomCode);
     });
 
     socket.on('day:vote', ({ roomCode, targetId }) => {
@@ -123,14 +231,38 @@ export function registerHandlers(io: IoServer): void {
       if (error) socket.emit('error', { message: error });
     });
 
+    socket.on('game:lastWords', ({ roomCode, text }) => {
+      const { userId } = socketData(socket);
+      if (!userId) return;
+      const error = gameManager.submitLastWords(roomCode, userId, text);
+      if (error) {
+        socket.emit('error', { message: error });
+        return;
+      }
+      broadcastGameViews(io, roomCode);
+    });
+
     socket.on('chat:message', ({ roomCode, text }) => {
       const { userId } = socketData(socket);
       if (!userId) return;
       const user = roomManager.getUser(userId);
       if (!user) return;
-      // MVP: single public channel. Phase 2 splits a Mafia-only night channel
-      // using a separate socket room joined only by mafia players.
       io.to(roomCode).emit('chat:message', {
+        fromUserId: userId,
+        displayName: user.displayName,
+        text,
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    socket.on('mafia:chat', ({ roomCode, text }) => {
+      const { userId } = socketData(socket);
+      if (!userId) return;
+      const game = gameManager.getGame(roomCode);
+      const user = roomManager.getUser(userId);
+      if (!game || !user) return;
+      if (game.players[userId]?.role !== 'mafia') return;
+      io.to(mafiaRoomName(roomCode)).emit('mafia:chat', {
         fromUserId: userId,
         displayName: user.displayName,
         text,
