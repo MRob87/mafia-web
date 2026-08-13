@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getSocket } from '../../../lib/socket';
 import { loadSession, clearSession, type AnonSession } from '../../../lib/session';
@@ -122,6 +122,18 @@ export default function RoomPage() {
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const mafiaChatScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [chat]);
+
+  useEffect(() => {
+    const el = mafiaChatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [mafiaChat]);
 
   useEffect(() => {
     const s = loadSession();
@@ -456,7 +468,10 @@ export default function RoomPage() {
                   <p className="mt-2 text-sm text-rose-200/60">No targets picked yet tonight.</p>
                 )}
 
-                <div className="mt-3 h-24 space-y-1 overflow-y-auto rounded-md border border-rose-900/40 bg-slate-950/40 p-2 text-sm">
+                <div
+                  ref={mafiaChatScrollRef}
+                  className="mt-3 h-24 space-y-1 overflow-y-auto rounded-md border border-rose-900/40 bg-slate-950/40 p-2 text-sm"
+                >
                   {mafiaChat.map((m, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <Avatar id={m.userId} name={m.displayName} size="sm" />
@@ -505,7 +520,10 @@ export default function RoomPage() {
 
         <section className={panelClass}>
           <h3 className="font-semibold">Public Chat</h3>
-          <div className="mt-2 h-40 space-y-1 overflow-y-auto rounded-md border border-slate-800 bg-slate-950/40 p-2 text-sm">
+          <div
+            ref={chatScrollRef}
+            className="mt-2 h-40 space-y-1 overflow-y-auto rounded-md border border-slate-800 bg-slate-950/40 p-2 text-sm"
+          >
             {chat.map((m, i) => (
               <div key={i} className="flex items-start gap-2">
                 <Avatar id={m.userId} name={m.displayName} size="sm" />
