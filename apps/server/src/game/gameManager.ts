@@ -129,6 +129,7 @@ export function submitLastWords(roomCode: string, userId: string, text: string):
     visibility: 'public',
     payload: { actorId: userId, text: trimmed },
     timestamp: new Date().toISOString(),
+    dayNumber: game.dayNumber,
   });
   return null;
 }
@@ -149,6 +150,7 @@ export function kickPlayer(roomCode: string, userId: string): string | null {
     visibility: 'public',
     payload: { actorId: userId },
     timestamp: new Date().toISOString(),
+    dayNumber: game.dayNumber,
   });
 
   const winner = checkWinCondition(game);

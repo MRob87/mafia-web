@@ -39,6 +39,7 @@ export function resolveNightActions(game: GameInstance): void {
       visibility: 'public',
       payload: { targetId: killTarget, cause: 'mafia' },
       timestamp: nowIso(),
+      dayNumber: game.dayNumber,
     };
     game.eventLog.push(event);
   } else {
@@ -47,6 +48,7 @@ export function resolveNightActions(game: GameInstance): void {
       visibility: 'public',
       payload: { message: 'No one died during the night.' },
       timestamp: nowIso(),
+      dayNumber: game.dayNumber,
     });
   }
 
@@ -76,6 +78,7 @@ export function resolveDayVote(game: GameInstance): void {
       visibility: 'public',
       payload: { targetId: eliminated, cause: 'vote' },
       timestamp: nowIso(),
+      dayNumber: game.dayNumber,
     };
     game.eventLog.push(event);
   } else {
@@ -87,6 +90,7 @@ export function resolveDayVote(game: GameInstance): void {
         message: votes.length === 0 ? 'No votes were cast.' : 'The vote was tied — no one was eliminated.',
       },
       timestamp: nowIso(),
+      dayNumber: game.dayNumber,
     });
   }
 

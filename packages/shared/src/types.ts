@@ -68,6 +68,8 @@ export interface GameEvent {
   visibility: EventVisibility;
   payload: Record<string, unknown>;
   timestamp: string;
+  /** The GameInstance.dayNumber this happened under — lets clients group the timeline by round. */
+  dayNumber: number;
 }
 
 export interface InvestigationResult {

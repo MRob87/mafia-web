@@ -43,6 +43,17 @@ function formatRemaining(totalSeconds: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+/** Buckets the timeline by GameEvent.dayNumber, oldest round first, in original order within a round. */
+function groupEventsByDay(events: GameEvent[]): Array<[number, GameEvent[]]> {
+  const groups = new Map<number, GameEvent[]>();
+  for (const e of events) {
+    const list = groups.get(e.dayNumber) ?? [];
+    list.push(e);
+    groups.set(e.dayNumber, list);
+  }
+  return [...groups.entries()].sort(([a], [b]) => a - b);
+}
+
 function describeEvent(event: GameEvent, nameById: Map<string, string>): string {
   if (event.type === 'death') {
     const name = nameById.get(event.payload.targetId as string) ?? 'Someone';
@@ -236,7 +247,7 @@ export default function RoomPage() {
 
   return (
     <main className={`min-h-screen bg-gradient-to-b ${background} px-4 py-6 transition-colors duration-1000 sm:px-6 sm:py-10`}>
-      <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">Room {session.roomCode}</h1>
         {error && <p className="text-sm text-rose-400">{error}</p>}
 
@@ -277,6 +288,7 @@ export default function RoomPage() {
         )}
 
         {view && (
+          <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-6">
           <section className="space-y-4">
             <div className={panelClass}>
               <h2 className="flex flex-wrap items-baseline gap-3 text-lg font-semibold">
@@ -338,14 +350,6 @@ export default function RoomPage() {
                     Send
                   </button>
                 </div>
-              </div>
-            )}
-
-            {view.visibleEvents.length > 0 && (
-              <div className={`${panelClass} max-h-32 space-y-1 overflow-y-auto text-sm text-slate-300`}>
-                {view.visibleEvents.map((e, i) => (
-                  <p key={i}>{describeEvent(e, nameById)}</p>
-                ))}
               </div>
             )}
 
@@ -460,6 +464,27 @@ export default function RoomPage() {
               </section>
             )}
           </section>
+
+          <aside className="mt-4 lg:sticky lg:top-6 lg:mt-0">
+            <div className={`${panelClass} max-h-64 overflow-y-auto lg:max-h-[70vh]`}>
+              <h3 className="mb-2 font-semibold">Timeline</h3>
+              {view.visibleEvents.length > 0 ? (
+                groupEventsByDay(view.visibleEvents).map(([day, events]) => (
+                  <div key={day} className="mb-3 last:mb-0">
+                    <p className="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">Day {day}</p>
+                    <div className="space-y-1 text-sm text-slate-300">
+                      {events.map((e, i) => (
+                        <p key={i}>{describeEvent(e, nameById)}</p>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-500">Nothing has happened yet.</p>
+              )}
+            </div>
+          </aside>
+          </div>
         )}
 
         <section className={panelClass}>
