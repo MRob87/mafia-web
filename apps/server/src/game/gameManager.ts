@@ -104,6 +104,14 @@ export function submitNightAction(roomCode: string, actorId: string, targetId: s
   const actor = game.players[actorId];
   if (!actor?.isAlive) return 'You are not able to act.';
   if (actor.role === 'villager') return 'Villagers have no night action.';
+  // A role never changes mid-game, so re-investigating the same player can never learn
+  // anything new — mirrors the client hiding that option once it's already been used.
+  if (
+    actor.role === 'detective' &&
+    game.investigationResults.some((r) => r.detectiveId === actorId && r.targetId === targetId)
+  ) {
+    return 'You already investigated this player.';
+  }
 
   const action: NightAction = { actorId, role: actor.role, targetId, submittedAt: new Date().toISOString() };
   game.nightActions = game.nightActions.filter((a) => a.actorId !== actorId);

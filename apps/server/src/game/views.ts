@@ -18,9 +18,8 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
     throw new Error(`buildPlayerView: user ${userId} is not part of game ${game.roomCode}`);
   }
 
-  const lastInvestigation = [...game.investigationResults]
-    .reverse()
-    .find((r) => r.detectiveId === userId);
+  const ownInvestigations = game.investigationResults.filter((r) => r.detectiveId === userId);
+  const lastInvestigation = ownInvestigations[ownInvestigations.length - 1];
 
   return {
     roomCode: game.roomCode,
@@ -39,6 +38,7 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
     lastInvestigationResult: lastInvestigation
       ? { targetId: lastInvestigation.targetId, isMafia: lastInvestigation.isMafia }
       : null,
+    investigationHistory: ownInvestigations.map((r) => ({ targetId: r.targetId, isMafia: r.isMafia })),
     winner: game.winner,
     lastEliminatedId: game.lastEliminatedId,
   };

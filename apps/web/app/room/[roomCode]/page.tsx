@@ -85,10 +85,11 @@ function roleInstructions(phase: string, role: string, isAlive: boolean): string
   return null;
 }
 
-/** Doctor is protecting, not attacking — the button text should say so. */
+/** Doctor protects, Detective investigates, Mafia targets — the button text should say so. */
 function nightActionLabel(role: string, selected: boolean): string {
-  const verb = role === 'doctor' ? 'Protect' : 'Target';
-  return selected ? `✓ ${verb === 'Protect' ? 'Protected' : 'Targeted'}` : verb;
+  const verb = role === 'doctor' ? 'Protect' : role === 'detective' ? 'Investigate' : 'Target';
+  if (!selected) return verb;
+  return verb === 'Protect' ? '✓ Protected' : verb === 'Investigate' ? '✓ Investigated' : '✓ Targeted';
 }
 
 const inputClass =
@@ -218,6 +219,7 @@ export default function RoomPage() {
     ? Math.max(0, Math.round((new Date(view.phaseEndsAt).getTime() - now) / 1000))
     : null;
   const nameById = new Map((view?.players ?? []).map((p) => [p.userId, p.displayName]));
+  const investigatedById = new Map((view?.investigationHistory ?? []).map((r) => [r.targetId, r.isMafia]));
 
   const isHost = room?.hostId === session.userId;
   const canStart = isHost && room && room.playerIds.length >= room.minPlayers;
@@ -417,7 +419,16 @@ export default function RoomPage() {
                       // Doctor is explicitly allowed to protect themselves (see Rules).
                       (p.userId !== view.self.userId || view.self.role === 'doctor') &&
                       ACTING_ROLES.has(view.self.role) &&
-                      view.phase === 'night' && (
+                      view.phase === 'night' &&
+                      (view.self.role === 'detective' && investigatedById.has(p.userId) ? (
+                        <span
+                          className={`text-xs font-semibold ${
+                            investigatedById.get(p.userId) ? 'text-rose-400' : 'text-emerald-400'
+                          }`}
+                        >
+                          {investigatedById.get(p.userId) ? '⚠ Mafia' : '✓ Not Mafia'}
+                        </span>
+                      ) : (
                         <button
                           onClick={() => submitTarget(p.userId)}
                           disabled={p.userId === selectedTargetId}
@@ -427,7 +438,7 @@ export default function RoomPage() {
                             ? 'Protect Yourself'
                             : nightActionLabel(view.self.role, p.userId === selectedTargetId)}
                         </button>
-                      )}
+                      ))}
                     {view.self.isAlive && p.isAlive && p.userId !== view.self.userId && view.phase === 'day_voting' && (
                       <button
                         onClick={() => submitTarget(p.userId)}

@@ -121,6 +121,10 @@ export interface PlayerView {
   visibleEvents: GameEvent[];
   /** Present only for Detective after an investigation resolves. */
   lastInvestigationResult: { targetId: string; isMafia: boolean } | null;
+  /** Every player this Detective has ever investigated, across the whole game — lets the
+   *  client stop them from re-investigating someone whose role can't have changed. Empty for
+   *  every other role. */
+  investigationHistory: Array<{ targetId: string; isMafia: boolean }>;
   winner: 'mafia' | 'villagers' | null;
   /** Who the most recent day vote eliminated, if anyone — drives the last-words prompt. */
   lastEliminatedId: string | null;
