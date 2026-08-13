@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getSocket } from '../../../lib/socket';
 import { loadSession, clearSession, type AnonSession } from '../../../lib/session';
 import { Avatar } from '../../../components/Avatar';
+import { Rules } from '../../../components/Rules';
 import type { GameEvent, PlayerView, Room } from '@mafia/shared';
 
 const ACTING_ROLES = new Set(['mafia', 'doctor', 'detective']);
@@ -245,6 +246,11 @@ export default function RoomPage() {
               {room.playerIds.length} / {room.maxPlayers} players (min {room.minPlayers} to start)
             </p>
             <p className="text-sm text-slate-400">Night timer: {room.nightDurationSeconds}s</p>
+
+            <div className="mt-3">
+              <Rules />
+            </div>
+
             <ul className="mt-3 space-y-2">
               {room.players.map((p) => (
                 <li key={p.userId} className="flex items-center gap-2">
@@ -295,6 +301,10 @@ export default function RoomPage() {
                   </button>
                 </div>
               )}
+
+              <div className="mt-3">
+                <Rules />
+              </div>
 
               <p className="mt-3 text-sm">
                 Your role:{' '}
@@ -444,7 +454,7 @@ export default function RoomPage() {
         )}
 
         <section className={panelClass}>
-          <h3 className="font-semibold">Chat</h3>
+          <h3 className="font-semibold">Public Chat</h3>
           <div className="mt-2 h-40 space-y-1 overflow-y-auto rounded-md border border-slate-800 bg-slate-950/40 p-2 text-sm">
             {chat.map((m, i) => (
               <div key={i} className="flex items-start gap-2">

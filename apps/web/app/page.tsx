@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSocket } from '../lib/socket';
 import { saveSession } from '../lib/session';
+import { Rules } from '../components/Rules';
 import type { Room } from '@mafia/shared';
 
 export default function HomePage() {
@@ -58,45 +59,9 @@ export default function HomePage() {
       <h1 className="text-3xl font-bold tracking-tight">Mafia</h1>
       <p className="mt-1 text-sm text-slate-400">No account needed — just pick a name for this session.</p>
 
-      <details open className="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <summary className="cursor-pointer select-none font-semibold text-slate-100">How to play</summary>
-        <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-300">
-          <p>
-            <strong className="text-slate-100">Goal:</strong> Villagers win by voting out every Mafia member. Mafia
-            win once they equal or outnumber everyone left alive.
-          </p>
-          <p>Each round has two phases:</p>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>
-              <strong className="text-slate-100">Night</strong> — Mafia, Doctor, and Detective each secretly choose a
-              target.
-            </li>
-            <li>
-              <strong className="text-slate-100">Day</strong> — everyone discusses, then votes to eliminate a
-              suspect.
-            </li>
-          </ul>
-          <p className="font-semibold text-slate-100">Roles:</p>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>
-              <strong className="text-rose-400">Mafia</strong> — each night, secretly choose a player to eliminate.
-              Knows who the other Mafia are.
-            </li>
-            <li>
-              <strong className="text-emerald-400">Doctor</strong> — each night, choose a player to protect from the
-              Mafia's kill.
-            </li>
-            <li>
-              <strong className="text-sky-400">Detective</strong> — each night, investigate a player to learn
-              whether they're Mafia.
-            </li>
-            <li>
-              <strong className="text-slate-300">Villager</strong> — no special ability. Use discussion and voting to
-              find the Mafia.
-            </li>
-          </ul>
-        </div>
-      </details>
+      <div className="mt-6">
+        <Rules defaultOpen title="How to play" />
+      </div>
 
       <div className="mt-6 space-y-4">
         <input
