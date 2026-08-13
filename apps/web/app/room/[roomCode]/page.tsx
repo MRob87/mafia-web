@@ -84,7 +84,8 @@ const dangerGhostButtonClass =
   'rounded-md border border-rose-900/60 px-2 py-1 text-xs font-medium text-rose-400 transition-colors hover:bg-rose-950/50';
 const actionButtonClass =
   'shrink-0 rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-indigo-500';
-const selectedActionButtonClass = 'shrink-0 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white';
+const selectedActionButtonClass =
+  'shrink-0 cursor-default rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white opacity-90';
 const panelClass = 'rounded-lg border border-slate-800 bg-slate-900/60 p-4';
 
 export default function RoomPage() {
@@ -385,6 +386,7 @@ export default function RoomPage() {
                       view.phase === 'night' && (
                         <button
                           onClick={() => submitTarget(p.userId)}
+                          disabled={p.userId === selectedTargetId}
                           className={p.userId === selectedTargetId ? selectedActionButtonClass : actionButtonClass}
                         >
                           {p.userId === selectedTargetId
@@ -397,6 +399,7 @@ export default function RoomPage() {
                     {view.self.isAlive && p.isAlive && p.userId !== view.self.userId && view.phase === 'day_voting' && (
                       <button
                         onClick={() => submitTarget(p.userId)}
+                        disabled={p.userId === selectedTargetId}
                         className={p.userId === selectedTargetId ? selectedActionButtonClass : actionButtonClass}
                       >
                         {p.userId === selectedTargetId ? '✓ Voted' : 'Vote'}
@@ -471,17 +474,23 @@ export default function RoomPage() {
               </div>
             ))}
           </div>
-          <div className="mt-2 flex gap-2">
-            <input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendChat()}
-              className={inputClass}
-            />
-            <button onClick={sendChat} className={primaryButtonClass}>
-              Send
-            </button>
-          </div>
+          {view && !view.self.isAlive ? (
+            <p className="mt-2 text-sm text-slate-500">
+              You've been eliminated — Public Chat is muted for the rest of this game.
+            </p>
+          ) : (
+            <div className="mt-2 flex gap-2">
+              <input
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendChat()}
+                className={inputClass}
+              />
+              <button onClick={sendChat} className={primaryButtonClass}>
+                Send
+              </button>
+            </div>
+          )}
         </section>
       </div>
     </main>

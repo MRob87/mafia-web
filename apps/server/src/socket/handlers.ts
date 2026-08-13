@@ -247,6 +247,14 @@ export function registerHandlers(io: IoServer): void {
       if (!userId) return;
       const user = roomManager.getUser(userId);
       if (!user) return;
+      // Eliminated players get their moment via the dedicated last-words prompt during
+      // 'elimination' — after that, they're muted in Public Chat for the rest of this game
+      // (this also naturally covers a kicked player, since kicks mark the player dead too).
+      const game = gameManager.getGame(roomCode);
+      if (game && game.players[userId]?.isAlive === false) {
+        socket.emit('error', { message: "Eliminated players can't use Public Chat." });
+        return;
+      }
       io.to(roomCode).emit('chat:message', {
         fromUserId: userId,
         displayName: user.displayName,
