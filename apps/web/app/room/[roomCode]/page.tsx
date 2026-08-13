@@ -248,7 +248,9 @@ export default function RoomPage() {
   }
 
   return (
-    <main className={`min-h-screen bg-gradient-to-b ${background} px-4 py-6 transition-colors duration-1000 sm:px-6 sm:py-10`}>
+    <main
+      className={`min-h-screen bg-gradient-to-b ${background} px-4 pt-6 pb-40 transition-colors duration-1000 sm:px-6 sm:pt-10 sm:pb-10`}
+    >
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">Room {session.roomCode}</h1>
         {error && <p className="text-sm text-rose-400">{error}</p>}

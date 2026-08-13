@@ -67,7 +67,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
+    <main className="mx-auto w-full max-w-md px-4 pt-10 pb-40 sm:pt-16 sm:pb-16">
       <h1 className="text-3xl font-bold tracking-tight">Mafia</h1>
       <p className="mt-1 text-sm text-slate-400">No account needed — just pick a name for this session.</p>
 
