@@ -378,14 +378,20 @@ export default function RoomPage() {
                   <div className="ml-auto flex gap-1.5">
                     {view.self.isAlive &&
                       p.isAlive &&
-                      p.userId !== view.self.userId &&
+                      // Every acting role but the Doctor can only target someone else — the
+                      // Doctor is explicitly allowed to protect themselves (see Rules).
+                      (p.userId !== view.self.userId || view.self.role === 'doctor') &&
                       ACTING_ROLES.has(view.self.role) &&
                       view.phase === 'night' && (
                         <button
                           onClick={() => submitTarget(p.userId)}
                           className={p.userId === selectedTargetId ? selectedActionButtonClass : actionButtonClass}
                         >
-                          {p.userId === selectedTargetId ? '✓ Targeted' : 'Target'}
+                          {p.userId === selectedTargetId
+                            ? '✓ Targeted'
+                            : p.userId === view.self.userId
+                              ? 'Protect Yourself'
+                              : 'Target'}
                         </button>
                       )}
                     {view.self.isAlive && p.isAlive && p.userId !== view.self.userId && view.phase === 'day_voting' && (
