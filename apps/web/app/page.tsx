@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSocket } from '../lib/socket';
 import { saveSession } from '../lib/session';
@@ -14,6 +14,18 @@ export default function HomePage() {
   const [nightDurationSeconds, setNightDurationSeconds] = useState(30);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    const socket = getSocket();
+    const handleConnectError = (err: Error) => {
+      setPending(false);
+      setError(`Can't reach the game server (${err.message}). Check you're using the right address.`);
+    };
+    socket.on('connect_error', handleConnectError);
+    return () => {
+      socket.off('connect_error', handleConnectError);
+    };
+  }, []);
 
   function enterRoom(room: Room, userId: string) {
     saveSession({ userId, displayName, roomCode: room.roomCode });

@@ -142,6 +142,7 @@ export default function RoomPage() {
       router.replace('/');
     });
     socket.on('error', (payload) => setError(payload.message));
+    socket.on('connect_error', (err) => setError(`Can't reach the game server (${err.message}).`));
     socket.on('chat:message', (msg) =>
       setChat((prev) => [...prev, { userId: msg.fromUserId, displayName: msg.displayName, text: msg.text }])
     );
@@ -167,6 +168,7 @@ export default function RoomPage() {
       socket.off('game:view', setView);
       socket.off('room:kicked');
       socket.off('error');
+      socket.off('connect_error');
       socket.off('chat:message');
       socket.off('mafia:chat');
       socket.off('game:mafiaNightStatus');
