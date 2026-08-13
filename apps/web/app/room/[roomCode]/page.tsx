@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getSocket } from '../../../lib/socket';
 import { loadSession, clearSession, type AnonSession } from '../../../lib/session';
+import { Avatar } from '../../../components/Avatar';
 import type { GameEvent, PlayerView, Room } from '@mafia/shared';
 
 const ACTING_ROLES = new Set(['mafia', 'doctor', 'detective']);
@@ -16,6 +17,23 @@ const PHASE_LABELS: Record<string, string> = {
   day_voting: 'Day — Voting',
   elimination: 'Elimination',
   game_over: 'Game Over',
+};
+
+// Mood shifts with the phase — dark and cold at night, warm through the day.
+const PHASE_BACKGROUND: Record<string, string> = {
+  night: 'from-slate-950 via-indigo-950 to-slate-950',
+  night_resolution: 'from-slate-950 via-rose-950 to-slate-950',
+  day_discussion: 'from-slate-950 via-amber-950 to-slate-950',
+  day_voting: 'from-slate-950 via-orange-950 to-slate-950',
+  elimination: 'from-slate-950 via-rose-950 to-slate-950',
+  game_over: 'from-slate-950 via-purple-950 to-slate-950',
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  mafia: 'text-rose-400',
+  doctor: 'text-emerald-400',
+  detective: 'text-sky-400',
+  villager: 'text-slate-300',
 };
 
 function formatRemaining(totalSeconds: number): string {
@@ -55,20 +73,34 @@ function roleInstructions(phase: string, role: string, isAlive: boolean): string
   return null;
 }
 
+const inputClass =
+  'min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500';
+const primaryButtonClass =
+  'shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50';
+const ghostButtonClass =
+  'rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800';
+const dangerGhostButtonClass =
+  'rounded-md border border-rose-900/60 px-2 py-1 text-xs font-medium text-rose-400 transition-colors hover:bg-rose-950/50';
+const actionButtonClass =
+  'shrink-0 rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-indigo-500';
+const selectedActionButtonClass = 'shrink-0 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white';
+const panelClass = 'rounded-lg border border-slate-800 bg-slate-900/60 p-4';
+
 export default function RoomPage() {
   const params = useParams<{ roomCode: string }>();
   const router = useRouter();
   const [session, setSession] = useState<AnonSession | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [view, setView] = useState<PlayerView | null>(null);
-  const [chat, setChat] = useState<Array<{ displayName: string; text: string }>>([]);
+  const [chat, setChat] = useState<Array<{ userId: string; displayName: string; text: string }>>([]);
   const [chatInput, setChatInput] = useState('');
-  const [mafiaChat, setMafiaChat] = useState<Array<{ displayName: string; text: string }>>([]);
+  const [mafiaChat, setMafiaChat] = useState<Array<{ userId: string; displayName: string; text: string }>>([]);
   const [mafiaChatInput, setMafiaChatInput] = useState('');
   const [mafiaTargets, setMafiaTargets] = useState<
     Array<{ actorId: string; actorDisplayName: string; targetId: string; targetDisplayName: string }>
   >([]);
   const [lastWordsInput, setLastWordsInput] = useState('');
+  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -98,10 +130,10 @@ export default function RoomPage() {
     });
     socket.on('error', (payload) => setError(payload.message));
     socket.on('chat:message', (msg) =>
-      setChat((prev) => [...prev, { displayName: msg.displayName, text: msg.text }])
+      setChat((prev) => [...prev, { userId: msg.fromUserId, displayName: msg.displayName, text: msg.text }])
     );
     socket.on('mafia:chat', (msg) =>
-      setMafiaChat((prev) => [...prev, { displayName: msg.displayName, text: msg.text }])
+      setMafiaChat((prev) => [...prev, { userId: msg.fromUserId, displayName: msg.displayName, text: msg.text }])
     );
     socket.on('game:mafiaNightStatus', (status) => setMafiaTargets(status.targets));
 
@@ -134,6 +166,11 @@ export default function RoomPage() {
     return () => clearInterval(interval);
   }, [view?.phaseEndsAt]);
 
+  // A fresh phase means a fresh decision — clear any highlighted pick from the last one.
+  useEffect(() => {
+    setSelectedTargetId(null);
+  }, [view?.phase]);
+
   if (!session) return null;
 
   const remainingSeconds = view?.phaseEndsAt
@@ -143,6 +180,7 @@ export default function RoomPage() {
 
   const isHost = room?.hostId === session.userId;
   const canStart = isHost && room && room.playerIds.length >= room.minPlayers;
+  const background = view ? (PHASE_BACKGROUND[view.phase] ?? 'from-slate-950 to-slate-950') : 'from-slate-950 to-slate-950';
 
   function startGame() {
     if (!session) return;
@@ -165,8 +203,10 @@ export default function RoomPage() {
     if (!session || !view) return;
     if (view.phase === 'night') {
       getSocket().emit('night:action', { roomCode: session.roomCode, targetId });
+      setSelectedTargetId(targetId);
     } else if (view.phase === 'day_voting') {
       getSocket().emit('day:vote', { roomCode: session.roomCode, targetId });
+      setSelectedTargetId(targetId);
     }
   }
 
@@ -193,219 +233,241 @@ export default function RoomPage() {
   }
 
   return (
-    <main style={{ maxWidth: 640, margin: '40px auto', padding: 24 }}>
-      <h1>Room {session.roomCode}</h1>
-      {error && <p style={{ color: '#f66' }}>{error}</p>}
+    <main className={`min-h-screen bg-gradient-to-b ${background} px-4 py-6 transition-colors duration-1000 sm:px-6 sm:py-10`}>
+      <div className="mx-auto w-full max-w-2xl space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Room {session.roomCode}</h1>
+        {error && <p className="text-sm text-rose-400">{error}</p>}
 
-      {!view && room && (
-        <section>
-          <h2>Lobby</h2>
-          <p>
-            {room.playerIds.length} / {room.maxPlayers} players (min {room.minPlayers} to start)
-          </p>
-          <p style={{ opacity: 0.7, fontSize: 14 }}>Night timer: {room.nightDurationSeconds}s</p>
-          <ul>
-            {room.players.map((p) => (
-              <li key={p.userId}>
-                {p.userId === session.userId ? `${session.displayName} (you)` : p.displayName}
-                {p.userId === room.hostId ? ' — host' : ''}
-                {isHost && p.userId !== session.userId && (
-                  <button onClick={() => kickPlayer(p.userId)} style={{ marginLeft: 8 }}>
-                    Remove
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-          {isHost && (
-            <button onClick={startGame} disabled={!canStart} style={{ padding: 10 }}>
-              Start Game
-            </button>
-          )}
-        </section>
-      )}
-
-      {view && (
-        <section>
-          <h2>
-            Day {view.dayNumber} — {PHASE_LABELS[view.phase] ?? view.phase}
-            {remainingSeconds !== null && (
-              <span
-                style={{
-                  marginLeft: 12,
-                  fontSize: 16,
-                  fontWeight: 400,
-                  color: remainingSeconds <= 5 ? '#f66' : '#9cf',
-                }}
-              >
-                ⏱ {formatRemaining(remainingSeconds)}
-              </span>
-            )}
-          </h2>
-
-          {isHost && (
-            <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-              {view.phase !== 'game_over' && (
-                <button onClick={skipPhase} style={{ padding: 6, fontSize: 13 }}>
-                  Skip Phase
-                </button>
-              )}
-              <button onClick={restartGame} style={{ padding: 6, fontSize: 13 }}>
-                Restart Game
-              </button>
-            </div>
-          )}
-
-          <p>Your role: {view.self.role}</p>
-          {roleInstructions(view.phase, view.self.role, view.self.isAlive) && (
-            <p style={{ opacity: 0.85, fontSize: 14 }}>
-              {roleInstructions(view.phase, view.self.role, view.self.isAlive)}
+        {!view && room && (
+          <section className={panelClass}>
+            <h2 className="text-lg font-semibold">Lobby</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              {room.playerIds.length} / {room.maxPlayers} players (min {room.minPlayers} to start)
             </p>
-          )}
-          {!view.self.isAlive && <p style={{ color: '#f66' }}>You have been eliminated. You can keep watching.</p>}
-          {view.winner && <h3>Game over — {view.winner} win!</h3>}
-
-          {view.phase === 'elimination' && view.lastEliminatedId === view.self.userId && (
-            <div style={{ border: '1px solid #f66', borderRadius: 6, padding: 8, marginBottom: 12 }}>
-              <p style={{ margin: '0 0 6px 0' }}>You were voted out. Any last words?</p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  value={lastWordsInput}
-                  onChange={(e) => setLastWordsInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && sendLastWords()}
-                  style={{ flex: 1, padding: 8 }}
-                />
-                <button onClick={sendLastWords} style={{ padding: 8 }}>
-                  Send
-                </button>
-              </div>
-            </div>
-          )}
-
-          {view.visibleEvents.length > 0 && (
-            <div
-              style={{
-                border: '1px solid #333',
-                borderRadius: 6,
-                padding: '8px 12px',
-                marginBottom: 12,
-                fontSize: 14,
-                opacity: 0.85,
-                maxHeight: 120,
-                overflowY: 'auto',
-              }}
-            >
-              {view.visibleEvents.map((e, i) => (
-                <p key={i} style={{ margin: '2px 0' }}>
-                  {describeEvent(e, nameById)}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {view.lastInvestigationResult && (
-            <p>
-              Investigation result: {nameById.get(view.lastInvestigationResult.targetId) ?? 'Someone'} is{' '}
-              {view.lastInvestigationResult.isMafia ? 'Mafia' : 'not Mafia'}.
-            </p>
-          )}
-
-          <ul>
-            {view.players.map((p) => (
-              <li key={p.userId} style={{ opacity: p.isAlive ? 1 : 0.4 }}>
-                {p.displayName}
-                {p.userId === view.self.userId ? ' (you)' : ''}
-                {!p.isAlive ? ' (dead)' : ''}
-                {p.isAlive && !p.isConnected ? ' (disconnected)' : ''}
-                {p.revealedRole ? ` — ${p.revealedRole}` : ''}
-                {view.self.isAlive &&
-                  p.isAlive &&
-                  p.userId !== view.self.userId &&
-                  ACTING_ROLES.has(view.self.role) &&
-                  view.phase === 'night' && (
-                    <button onClick={() => submitTarget(p.userId)} style={{ marginLeft: 8 }}>
-                      Target
+            <p className="text-sm text-slate-400">Night timer: {room.nightDurationSeconds}s</p>
+            <ul className="mt-3 space-y-2">
+              {room.players.map((p) => (
+                <li key={p.userId} className="flex items-center gap-2">
+                  <Avatar id={p.userId} name={p.displayName} />
+                  <span className="text-sm">
+                    {p.userId === session.userId ? `${session.displayName} (you)` : p.displayName}
+                    {p.userId === room.hostId && <span className="ml-1 text-slate-500"> — host</span>}
+                  </span>
+                  {isHost && p.userId !== session.userId && (
+                    <button onClick={() => kickPlayer(p.userId)} className={`${dangerGhostButtonClass} ml-auto`}>
+                      Remove
                     </button>
                   )}
-                {view.self.isAlive && p.isAlive && p.userId !== view.self.userId && view.phase === 'day_voting' && (
-                  <button onClick={() => submitTarget(p.userId)} style={{ marginLeft: 8 }}>
-                    Vote
-                  </button>
-                )}
-                {isHost && p.isAlive && p.userId !== view.self.userId && (
-                  <button onClick={() => kickPlayer(p.userId)} style={{ marginLeft: 8 }}>
-                    Remove
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+            {isHost && (
+              <button onClick={startGame} disabled={!canStart} className={`${primaryButtonClass} mt-4 w-full`}>
+                Start Game
+              </button>
+            )}
+          </section>
+        )}
 
-          {view.self.role === 'mafia' && view.self.isAlive && (
-            <section
-              style={{ marginTop: 16, border: '1px solid #833', borderRadius: 6, padding: '8px 12px' }}
-            >
-              <h3 style={{ margin: '4px 0' }}>🔪 Mafia Chat</h3>
-              <p style={{ opacity: 0.8, fontSize: 13, margin: '0 0 8px 0' }}>
-                This is a closed discussion — only fellow Mafia can see it. Your goal: agree on a target each night
-                and eliminate Villagers, the Doctor, and the Detective until the Mafia equal or outnumber everyone
-                left alive.
-              </p>
-              {mafiaTargets.length > 0 ? (
-                <ul style={{ margin: '4px 0' }}>
-                  {mafiaTargets.map((t) => (
-                    <li key={t.actorId}>
-                      {t.actorDisplayName} → {t.targetDisplayName}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p style={{ opacity: 0.7, fontSize: 14 }}>No targets picked yet tonight.</p>
+        {view && (
+          <section className="space-y-4">
+            <div className={panelClass}>
+              <h2 className="flex flex-wrap items-baseline gap-3 text-lg font-semibold">
+                <span>
+                  Day {view.dayNumber} — {PHASE_LABELS[view.phase] ?? view.phase}
+                </span>
+                {remainingSeconds !== null && (
+                  <span className={`text-sm font-normal ${remainingSeconds <= 5 ? 'text-rose-400' : 'text-sky-300'}`}>
+                    ⏱ {formatRemaining(remainingSeconds)}
+                  </span>
+                )}
+              </h2>
+
+              {isHost && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {view.phase !== 'game_over' && (
+                    <button onClick={skipPhase} className={ghostButtonClass}>
+                      Skip Phase
+                    </button>
+                  )}
+                  <button onClick={restartGame} className={ghostButtonClass}>
+                    Restart Game
+                  </button>
+                </div>
               )}
-              <div style={{ height: 100, overflowY: 'auto', border: '1px solid #333', padding: 8, margin: '8px 0' }}>
-                {mafiaChat.map((m, i) => (
-                  <div key={i}>
-                    <strong>{m.displayName}:</strong> {m.text}
-                  </div>
+
+              <p className="mt-3 text-sm">
+                Your role:{' '}
+                <span className={`font-semibold ${ROLE_COLORS[view.self.role] ?? 'text-slate-200'}`}>
+                  {view.self.role}
+                </span>
+              </p>
+              {roleInstructions(view.phase, view.self.role, view.self.isAlive) && (
+                <p className="mt-1 text-sm text-slate-400">
+                  {roleInstructions(view.phase, view.self.role, view.self.isAlive)}
+                </p>
+              )}
+              {!view.self.isAlive && (
+                <p className="mt-1 text-sm text-rose-400">You have been eliminated. You can keep watching.</p>
+              )}
+              {view.winner && <h3 className="mt-2 text-base font-bold text-amber-300">Game over — {view.winner} win!</h3>}
+            </div>
+
+            {view.phase === 'elimination' && view.lastEliminatedId === view.self.userId && (
+              <div className="rounded-lg border border-rose-800 bg-rose-950/40 p-4">
+                <p className="mb-2 text-sm">You were voted out. Any last words?</p>
+                <div className="flex gap-2">
+                  <input
+                    value={lastWordsInput}
+                    onChange={(e) => setLastWordsInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && sendLastWords()}
+                    className={inputClass}
+                  />
+                  <button onClick={sendLastWords} className={primaryButtonClass}>
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {view.visibleEvents.length > 0 && (
+              <div className={`${panelClass} max-h-32 space-y-1 overflow-y-auto text-sm text-slate-300`}>
+                {view.visibleEvents.map((e, i) => (
+                  <p key={i}>{describeEvent(e, nameById)}</p>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  value={mafiaChatInput}
-                  onChange={(e) => setMafiaChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && sendMafiaChat()}
-                  style={{ flex: 1, padding: 8 }}
-                />
-                <button onClick={sendMafiaChat} style={{ padding: 8 }}>
-                  Send
-                </button>
-              </div>
-            </section>
-          )}
-        </section>
-      )}
+            )}
 
-      <section style={{ marginTop: 24 }}>
-        <h3>Chat</h3>
-        <div style={{ height: 160, overflowY: 'auto', border: '1px solid #333', padding: 8, marginBottom: 8 }}>
-          {chat.map((m, i) => (
-            <div key={i}>
-              <strong>{m.displayName}:</strong> {m.text}
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendChat()}
-            style={{ flex: 1, padding: 8 }}
-          />
-          <button onClick={sendChat} style={{ padding: 8 }}>
-            Send
-          </button>
-        </div>
-      </section>
+            {view.lastInvestigationResult && (
+              <p className="text-sm text-slate-300">
+                Investigation result: {nameById.get(view.lastInvestigationResult.targetId) ?? 'Someone'} is{' '}
+                <span className={view.lastInvestigationResult.isMafia ? 'text-rose-400' : 'text-emerald-400'}>
+                  {view.lastInvestigationResult.isMafia ? 'Mafia' : 'not Mafia'}
+                </span>
+                .
+              </p>
+            )}
+
+            <ul className={`${panelClass} space-y-2`}>
+              {view.players.map((p) => (
+                <li
+                  key={p.userId}
+                  className={`flex flex-wrap items-center gap-2 rounded-md px-2 py-1.5 ${
+                    p.userId === selectedTargetId ? 'bg-indigo-500/15 ring-1 ring-inset ring-indigo-500/50' : ''
+                  } ${p.isAlive ? '' : 'opacity-40'}`}
+                >
+                  <Avatar id={p.userId} name={p.displayName} />
+                  <span className="text-sm">
+                    {p.displayName}
+                    {p.userId === view.self.userId && <span className="text-slate-500"> (you)</span>}
+                    {!p.isAlive && <span className="text-slate-500"> (dead)</span>}
+                    {p.isAlive && !p.isConnected && <span className="text-amber-400"> (disconnected)</span>}
+                    {p.revealedRole && <span className={`ml-1 ${ROLE_COLORS[p.revealedRole]}`}> — {p.revealedRole}</span>}
+                  </span>
+
+                  <div className="ml-auto flex gap-1.5">
+                    {view.self.isAlive &&
+                      p.isAlive &&
+                      p.userId !== view.self.userId &&
+                      ACTING_ROLES.has(view.self.role) &&
+                      view.phase === 'night' && (
+                        <button
+                          onClick={() => submitTarget(p.userId)}
+                          className={p.userId === selectedTargetId ? selectedActionButtonClass : actionButtonClass}
+                        >
+                          {p.userId === selectedTargetId ? '✓ Targeted' : 'Target'}
+                        </button>
+                      )}
+                    {view.self.isAlive && p.isAlive && p.userId !== view.self.userId && view.phase === 'day_voting' && (
+                      <button
+                        onClick={() => submitTarget(p.userId)}
+                        className={p.userId === selectedTargetId ? selectedActionButtonClass : actionButtonClass}
+                      >
+                        {p.userId === selectedTargetId ? '✓ Voted' : 'Vote'}
+                      </button>
+                    )}
+                    {isHost && p.isAlive && p.userId !== view.self.userId && (
+                      <button onClick={() => kickPlayer(p.userId)} className={dangerGhostButtonClass}>
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {view.self.role === 'mafia' && view.self.isAlive && (
+              <section className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-4">
+                <h3 className="font-semibold text-rose-300">🔪 Mafia Chat</h3>
+                <p className="mt-1 text-xs text-rose-200/70">
+                  This is a closed discussion — only fellow Mafia can see it. Your goal: agree on a target each night
+                  and eliminate Villagers, the Doctor, and the Detective until the Mafia equal or outnumber everyone
+                  left alive.
+                </p>
+
+                {mafiaTargets.length > 0 ? (
+                  <ul className="mt-2 space-y-0.5 text-sm text-rose-100">
+                    {mafiaTargets.map((t) => (
+                      <li key={t.actorId}>
+                        {t.actorDisplayName} → {t.targetDisplayName}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-rose-200/60">No targets picked yet tonight.</p>
+                )}
+
+                <div className="mt-3 h-24 space-y-1 overflow-y-auto rounded-md border border-rose-900/40 bg-slate-950/40 p-2 text-sm">
+                  {mafiaChat.map((m, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Avatar id={m.userId} name={m.displayName} size="sm" />
+                      <span>
+                        <strong>{m.displayName}:</strong> {m.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    value={mafiaChatInput}
+                    onChange={(e) => setMafiaChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && sendMafiaChat()}
+                    className={inputClass}
+                  />
+                  <button onClick={sendMafiaChat} className={primaryButtonClass}>
+                    Send
+                  </button>
+                </div>
+              </section>
+            )}
+          </section>
+        )}
+
+        <section className={panelClass}>
+          <h3 className="font-semibold">Chat</h3>
+          <div className="mt-2 h-40 space-y-1 overflow-y-auto rounded-md border border-slate-800 bg-slate-950/40 p-2 text-sm">
+            {chat.map((m, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <Avatar id={m.userId} name={m.displayName} size="sm" />
+                <span>
+                  <strong>{m.displayName}:</strong> {m.text}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-2">
+            <input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendChat()}
+              className={inputClass}
+            />
+            <button onClick={sendChat} className={primaryButtonClass}>
+              Send
+            </button>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

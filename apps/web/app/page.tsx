@@ -54,87 +54,96 @@ export default function HomePage() {
   }
 
   return (
-    <main style={{ maxWidth: 420, margin: '80px auto', padding: 24 }}>
-      <h1>Mafia</h1>
-      <p style={{ opacity: 0.7 }}>No account needed — just pick a name for this session.</p>
+    <main className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">
+      <h1 className="text-3xl font-bold tracking-tight">Mafia</h1>
+      <p className="mt-1 text-sm text-slate-400">No account needed — just pick a name for this session.</p>
 
-      <details open style={{ border: '1px solid #333', borderRadius: 8, padding: '10px 16px', marginBottom: 24 }}>
-        <summary style={{ cursor: 'pointer', fontWeight: 600 }}>How to play</summary>
-        <div style={{ marginTop: 12, fontSize: 14, lineHeight: 1.6, opacity: 0.85 }}>
+      <details open className="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+        <summary className="cursor-pointer select-none font-semibold text-slate-100">How to play</summary>
+        <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-300">
           <p>
-            <strong>Goal:</strong> Villagers win by voting out every Mafia member. Mafia win once they equal or
-            outnumber everyone left alive.
+            <strong className="text-slate-100">Goal:</strong> Villagers win by voting out every Mafia member. Mafia
+            win once they equal or outnumber everyone left alive.
           </p>
           <p>Each round has two phases:</p>
-          <ul style={{ paddingLeft: 20, margin: '4px 0' }}>
+          <ul className="list-disc space-y-1 pl-5">
             <li>
-              <strong>Night</strong> — Mafia, Doctor, and Detective each secretly choose a target.
+              <strong className="text-slate-100">Night</strong> — Mafia, Doctor, and Detective each secretly choose a
+              target.
             </li>
             <li>
-              <strong>Day</strong> — everyone discusses, then votes to eliminate a suspect.
+              <strong className="text-slate-100">Day</strong> — everyone discusses, then votes to eliminate a
+              suspect.
             </li>
           </ul>
-          <p style={{ marginBottom: 4 }}>
-            <strong>Roles:</strong>
-          </p>
-          <ul style={{ paddingLeft: 20, margin: '4px 0' }}>
+          <p className="font-semibold text-slate-100">Roles:</p>
+          <ul className="list-disc space-y-1 pl-5">
             <li>
-              <strong>Villager</strong> — no special ability. Use discussion and voting to find the Mafia.
+              <strong className="text-rose-400">Mafia</strong> — each night, secretly choose a player to eliminate.
+              Knows who the other Mafia are.
             </li>
             <li>
-              <strong>Mafia</strong> — each night, secretly choose a player to eliminate. Knows who the other Mafia
-              are.
+              <strong className="text-emerald-400">Doctor</strong> — each night, choose a player to protect from the
+              Mafia's kill.
             </li>
             <li>
-              <strong>Doctor</strong> — each night, choose a player to protect from the Mafia's kill.
+              <strong className="text-sky-400">Detective</strong> — each night, investigate a player to learn
+              whether they're Mafia.
             </li>
             <li>
-              <strong>Detective</strong> — each night, investigate a player to learn whether they're Mafia.
+              <strong className="text-slate-300">Villager</strong> — no special ability. Use discussion and voting to
+              find the Mafia.
             </li>
           </ul>
         </div>
       </details>
 
-      <input
-        placeholder="Display name"
-        value={displayName}
-        onChange={(e) => setDisplayName(e.target.value)}
-        style={{ width: '100%', padding: 10, marginBottom: 12 }}
-      />
-
-      <label style={{ display: 'block', fontSize: 14, opacity: 0.85, marginBottom: 12 }}>
-        Night timer (seconds)
+      <div className="mt-6 space-y-4">
         <input
-          type="number"
-          min={10}
-          max={120}
-          value={nightDurationSeconds}
-          onChange={(e) => setNightDurationSeconds(Number(e.target.value))}
-          style={{ width: '100%', padding: 10, marginTop: 4 }}
+          placeholder="Display name"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none focus:border-indigo-500"
         />
-      </label>
 
-      <button onClick={handleCreate} disabled={pending} style={{ width: '100%', padding: 10, marginBottom: 24 }}>
-        Create Room
-      </button>
+        <label className="block text-sm text-slate-400">
+          Night timer (seconds)
+          <input
+            type="number"
+            min={10}
+            max={120}
+            value={nightDurationSeconds}
+            onChange={(e) => setNightDurationSeconds(Number(e.target.value))}
+            className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none focus:border-indigo-500"
+          />
+        </label>
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input
-          placeholder="Room code"
-          value={roomCode}
-          onChange={(e) => setRoomCode(e.target.value)}
-          style={{ flex: 1, padding: 10 }}
-        />
-        <button onClick={handleJoin} disabled={pending} style={{ padding: 10 }}>
-          Join
+        <button
+          onClick={handleCreate}
+          disabled={pending}
+          className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
+        >
+          Create Room
         </button>
-      </div>
 
-      {error && (
-        <p style={{ color: '#f66', marginTop: 16 }}>
-          {error}
-        </p>
-      )}
+        <div className="flex gap-2">
+          <input
+            placeholder="Room code"
+            value={roomCode}
+            onChange={(e) => setRoomCode(e.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none focus:border-indigo-500"
+          />
+          <button
+            onClick={handleJoin}
+            disabled={pending}
+            className="shrink-0 rounded-lg border border-slate-700 px-5 py-3 font-semibold text-slate-100 transition-colors hover:bg-slate-800 disabled:opacity-50"
+          >
+            Join
+          </button>
+        </div>
+
+        {error && <p className="text-sm text-rose-400">{error}</p>}
+      </div>
     </main>
   );
 }

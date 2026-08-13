@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import './globals.css';
 
 export const metadata = {
   title: 'Mafia',
@@ -9,19 +10,11 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ fontFamily: 'system-ui, sans-serif', margin: 0, background: '#111', color: '#eee' }}>
-        <header style={{ padding: '12px 24px', borderBottom: '1px solid #222' }}>
+      <body className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
+        <header className="border-b border-slate-800 px-4 py-3 sm:px-6">
           <Link
             href="/"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              color: '#eee',
-              textDecoration: 'none',
-              fontWeight: 700,
-              fontSize: 18,
-            }}
+            className="inline-flex items-center gap-2 text-lg font-bold text-slate-100 no-underline transition-opacity hover:opacity-80"
           >
             <span aria-hidden="true">🎭</span>
             <span>Mafia</span>
