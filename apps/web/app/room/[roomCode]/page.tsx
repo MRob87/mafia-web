@@ -85,6 +85,12 @@ function roleInstructions(phase: string, role: string, isAlive: boolean): string
   return null;
 }
 
+/** Doctor is protecting, not attacking — the button text should say so. */
+function nightActionLabel(role: string, selected: boolean): string {
+  const verb = role === 'doctor' ? 'Protect' : 'Target';
+  return selected ? `✓ ${verb === 'Protect' ? 'Protected' : 'Targeted'}` : verb;
+}
+
 const inputClass =
   'min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-500';
 const primaryButtonClass =
@@ -405,11 +411,9 @@ export default function RoomPage() {
                           disabled={p.userId === selectedTargetId}
                           className={p.userId === selectedTargetId ? selectedActionButtonClass : actionButtonClass}
                         >
-                          {p.userId === selectedTargetId
-                            ? '✓ Targeted'
-                            : p.userId === view.self.userId
-                              ? 'Protect Yourself'
-                              : 'Target'}
+                          {p.userId === view.self.userId && p.userId !== selectedTargetId
+                            ? 'Protect Yourself'
+                            : nightActionLabel(view.self.role, p.userId === selectedTargetId)}
                         </button>
                       )}
                     {view.self.isAlive && p.isAlive && p.userId !== view.self.userId && view.phase === 'day_voting' && (
