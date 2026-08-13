@@ -78,12 +78,18 @@ export function advancePhase(roomCode: string): void {
     resolveDayVote(game);
   }
 
-  const winner = checkWinCondition(game);
-  if (winner) {
-    game.winner = winner;
-    transitionTo(game, 'game_over');
-    onPhaseChange(roomCode);
-    return;
+  // Only declare a winner once this cycle's recap beat has actually played out —
+  // night_resolution after a night kill, elimination after a day vote. Checking right after
+  // resolving the kill/vote itself used to let a decisive elimination skip straight to Game
+  // Over, denying everyone the recap and denying that player's last-words window entirely.
+  if (game.phase === 'night_resolution' || game.phase === 'elimination') {
+    const winner = checkWinCondition(game);
+    if (winner) {
+      game.winner = winner;
+      transitionTo(game, 'game_over');
+      onPhaseChange(roomCode);
+      return;
+    }
   }
 
   transitionTo(game, nextPhase(game.phase));

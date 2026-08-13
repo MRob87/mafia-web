@@ -161,11 +161,12 @@ export function finalizeRoleConfig(room: Room): RoleConfig {
   const mafia = override.mafia ?? base.mafia;
   const doctor = override.doctor ?? base.doctor;
   const detective = override.detective ?? base.detective;
-  // Only trust an explicit villager override if one was given — otherwise derive it so the
-  // total always matches the actual seat count exactly. A *partial* override (e.g. just
-  // {mafia: 2}) would otherwise leave villager at its full-lobby default, overflow the pool
-  // past playerCount, and let the random slice-to-fit in assignRoles() drop a "guaranteed" role.
-  const villager = override.villager ?? Math.max(0, playerCount - mafia - doctor - detective);
+  // Villager has no special ability, so it's always just "everyone else" once mafia/doctor/
+  // detective are set — never trust an explicit villager override. Any partial override that
+  // leaves it to a stale default (or mismatches the other three) would otherwise overflow the
+  // pool past playerCount and let the random slice-to-fit in assignRoles() drop a "guaranteed"
+  // role — this is what actually caused the very first zero-mafia bug this function fixed.
+  const villager = Math.max(0, playerCount - mafia - doctor - detective);
   const config = { mafia, doctor, detective, villager };
   room.roleConfig = config;
   return config;
