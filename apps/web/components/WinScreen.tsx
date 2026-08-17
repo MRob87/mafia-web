@@ -49,25 +49,54 @@ export function WinScreen({
         </p>
       </motion.div>
 
-      <div className="z-10 mt-8 grid max-w-xl grid-cols-3 gap-4 sm:grid-cols-4">
-        {players.map((p, i) => (
-          <motion.div
-            key={p.userId}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + i * 0.05 }}
-            className="flex flex-col items-center gap-1 text-center"
-          >
-            <Avatar id={p.userId} name={p.displayName} size="lg" />
-            <p className="text-xs text-slate-300">{p.displayName}</p>
-            {p.role && (
-              <p className={`text-[11px] font-semibold capitalize ${ROLE_COLORS[p.role] ?? 'text-slate-400'}`}>
-                {ROLE_EMOJI[p.role] ?? ''} {p.role}
+      {(() => {
+        // A player's role determines their team, not whether they personally survived — a
+        // villager who died on night 1 still "wins" if the villagers ultimately do.
+        const isWinningPlayer = (role: string | null) => (role === 'mafia') === (winner === 'mafia');
+        const winners = players.filter((p) => isWinningPlayer(p.role));
+        const losers = players.filter((p) => !isWinningPlayer(p.role));
+
+        const roster = (list: typeof players, delayOffset: number, muted: boolean) => (
+          <div className="grid max-w-xl grid-cols-3 gap-4 sm:grid-cols-4">
+            {list.map((p, i) => (
+              <motion.div
+                key={p.userId}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: muted ? 0.5 : 1, y: 0 }}
+                transition={{ delay: delayOffset + i * 0.05 }}
+                className={`flex flex-col items-center gap-1 text-center ${muted ? 'grayscale' : ''}`}
+              >
+                <Avatar id={p.userId} name={p.displayName} size="lg" />
+                <p className="text-xs text-slate-300">{p.displayName}</p>
+                {p.role && (
+                  <p className={`text-[11px] font-semibold capitalize ${ROLE_COLORS[p.role] ?? 'text-slate-400'}`}>
+                    {ROLE_EMOJI[p.role] ?? ''} {p.role}
+                  </p>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        );
+
+        return (
+          <div className="z-10 mt-8 space-y-6">
+            <div>
+              <p className="mb-3 text-center text-xs font-semibold tracking-wide text-amber-300 uppercase">
+                🏆 Winners
               </p>
+              {roster(winners, 0.3, false)}
+            </div>
+            {losers.length > 0 && (
+              <div>
+                <p className="mb-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                  Lost
+                </p>
+                {roster(losers, 0.3 + winners.length * 0.05, true)}
+              </div>
             )}
-          </motion.div>
-        ))}
-      </div>
+          </div>
+        );
+      })()}
 
       <p className="z-10 mt-8 text-xs text-slate-500">Tap anywhere to continue</p>
     </div>
