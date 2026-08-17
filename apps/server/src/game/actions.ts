@@ -50,6 +50,24 @@ export function resolveNightActions(game: GameInstance): void {
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     });
+
+    // The public message above is deliberately vague — but leaving Mafia with zero insight
+    // into why their own pick didn't land is indistinguishable from a bug. Doesn't reveal
+    // *who* protected the target, just that a save (vs. a vote split) is what happened.
+    if (mafiaTargets.length > 0) {
+      game.eventLog.push({
+        type: 'system',
+        visibility: ['mafia'],
+        payload: {
+          message:
+            killTarget && saved.has(killTarget)
+              ? 'Your target was protected and survived the night.'
+              : "Your group didn't agree on a target, so no one was killed.",
+        },
+        timestamp: nowIso(),
+        dayNumber: game.dayNumber,
+      });
+    }
   }
 
   for (const check of detectiveChecks) {

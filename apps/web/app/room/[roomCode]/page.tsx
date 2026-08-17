@@ -11,6 +11,7 @@ import { RoleRevealCard } from '../../../components/RoleRevealCard';
 import { EliminationOverlay, type EliminationInfo } from '../../../components/EliminationOverlay';
 import { WinScreen } from '../../../components/WinScreen';
 import { PhaseTransitionBanner } from '../../../components/PhaseTransitionBanner';
+import { ToastStack, type ToastMessage } from '../../../components/Toast';
 import { ROLE_COLORS, ROLE_EMOJI } from '../../../lib/roleTheme';
 import type { GameEvent, PlayerView, Room } from '@mafia/shared';
 
@@ -120,10 +121,23 @@ export default function RoomPage() {
   >([]);
   const [lastWordsInput, setLastWordsInput] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const mafiaChatScrollRef = useRef<HTMLDivElement>(null);
+  const toastIdRef = useRef(0);
+
+  // A rejected action (e.g. submitted right as the phase changed) used to surface as a single
+  // small line of text above the fold — easy to miss, and silently overwritten by the next
+  // state update before it could be read. Toasts stack, are hard to miss, and don't stomp
+  // each other.
+  function pushToast(text: string) {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev, { id, text }]);
+  }
+  function dismissToast(id: number) {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }
 
   // --- Presentation-layer state: role reveal, elimination reveal, phase transitions, win screen ---
   const [showRoleCard, setShowRoleCard] = useState(false);
@@ -176,20 +190,19 @@ export default function RoomPage() {
       clearSession();
       router.replace('/');
     });
-    socket.on('error', (payload) => setError(payload.message));
-    socket.on('connect_error', (err) => setError(`Can't reach the game server (${err.message}).`));
+    socket.on('error', (payload) => pushToast(payload.message));
+    socket.on('connect_error', (err) => pushToast(`Can't reach the game server (${err.message}).`));
 
     // Fetch current state — on the initial mount, and again on every (re)connect. A phone
     // locking its screen kills the underlying connection; socket.io auto-reconnects, but
-    // without this we'd clear neither the stale error message nor any state we missed while
-    // disconnected (a phase change, a death, chat) — the page would just look frozen/wrong.
+    // without this we'd miss any state that changed while disconnected (a phase change, a
+    // death, chat) — the page would just look frozen/wrong.
     const syncRoom = () => {
       socket.emit('room:sync', { roomCode: s.roomCode, userId: s.userId }, (res) => {
         if (!res.ok) {
-          setError(res.error);
+          pushToast(res.error);
           return;
         }
-        setError(null);
         setRoom(res.room);
         if (res.view) setView(res.view);
       });
@@ -361,6 +374,8 @@ export default function RoomPage() {
     <main
       className={`min-h-screen bg-gradient-to-b ${background} px-4 pt-6 pb-40 transition-colors duration-1000 sm:px-6 sm:pt-10 sm:pb-10`}
     >
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
+
       <PhaseTransitionBanner text={transitionText} />
 
       {view && showRoleCard && (
@@ -379,7 +394,6 @@ export default function RoomPage() {
 
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">Room {session.roomCode}</h1>
-        {error && <p className="text-sm text-rose-400">{error}</p>}
 
         {!view && room && (
           <section className={panelClass}>

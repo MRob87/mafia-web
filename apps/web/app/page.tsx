@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSocket } from '../lib/socket';
 import { saveSession } from '../lib/session';
 import { Rules } from '../components/Rules';
+import { ToastStack, type ToastMessage } from '../components/Toast';
 import type { Room } from '@mafia/shared';
 
 const NIGHT_DURATION_OPTIONS = [15, 30, 45, 60];
@@ -14,24 +15,27 @@ export default function HomePage() {
   const [displayName, setDisplayName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [nightDurationSeconds, setNightDurationSeconds] = useState(30);
-  const [error, setError] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [pending, setPending] = useState(false);
+  const toastIdRef = useRef(0);
+
+  function pushToast(text: string) {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev, { id, text }]);
+  }
+  function dismissToast(id: number) {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }
 
   useEffect(() => {
     const socket = getSocket();
     const handleConnectError = (err: Error) => {
       setPending(false);
-      setError(`Can't reach the game server (${err.message}). Check you're using the right address.`);
+      pushToast(`Can't reach the game server (${err.message}). Check you're using the right address.`);
     };
-    // A dropped connection (e.g. the phone's screen locking) auto-reconnects via socket.io —
-    // without this, a connect_error shown earlier would just sit there forever even after
-    // the connection actually recovered.
-    const handleConnect = () => setError(null);
     socket.on('connect_error', handleConnectError);
-    socket.on('connect', handleConnect);
     return () => {
       socket.off('connect_error', handleConnectError);
-      socket.off('connect', handleConnect);
     };
   }, []);
 
@@ -42,15 +46,14 @@ export default function HomePage() {
 
   function handleCreate() {
     if (!displayName.trim()) {
-      setError('Enter a display name first.');
+      pushToast('Enter a display name first.');
       return;
     }
     setPending(true);
-    setError(null);
     getSocket().emit('room:create', { displayName, nightDurationSeconds }, (res) => {
       setPending(false);
       if (!res.ok) {
-        setError(res.error);
+        pushToast(res.error);
         return;
       }
       enterRoom(res.room, res.userId);
@@ -59,15 +62,14 @@ export default function HomePage() {
 
   function handleJoin() {
     if (!displayName.trim() || !roomCode.trim()) {
-      setError('Enter a display name and room code.');
+      pushToast('Enter a display name and room code.');
       return;
     }
     setPending(true);
-    setError(null);
     getSocket().emit('room:join', { roomCode: roomCode.trim().toUpperCase(), displayName }, (res) => {
       setPending(false);
       if (!res.ok) {
-        setError(res.error);
+        pushToast(res.error);
         return;
       }
       enterRoom(res.room, res.userId);
@@ -76,6 +78,8 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-10 pb-40 sm:pt-16 sm:pb-16">
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
+
       <h1 className="text-3xl font-bold tracking-tight">Mafia</h1>
       <p className="mt-1 text-sm text-slate-400">No account needed — just pick a name for this session.</p>
 
@@ -134,8 +138,6 @@ export default function HomePage() {
             Join
           </button>
         </div>
-
-        {error && <p className="text-sm text-rose-400">{error}</p>}
       </div>
     </main>
   );
