@@ -1,0 +1,75 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { Avatar } from './Avatar';
+import { ROLE_COLORS, ROLE_EMOJI } from '../lib/roleTheme';
+
+const CONFETTI_COLORS = ['#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#8b5cf6', '#facc15'];
+const CONFETTI_PIECES = Array.from({ length: 36 }, (_, i) => ({
+  id: i,
+  left: Math.random() * 100,
+  delay: Math.random() * 0.6,
+  duration: 2.2 + Math.random() * 1.4,
+  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+}));
+
+export function WinScreen({
+  winner,
+  players,
+  onDismiss,
+}: {
+  winner: 'mafia' | 'villagers';
+  players: Array<{ userId: string; displayName: string; role: string | null }>;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center overflow-hidden bg-slate-950/95 p-6"
+      onClick={onDismiss}
+    >
+      {CONFETTI_PIECES.map((c) => (
+        <motion.span
+          key={c.id}
+          initial={{ top: '-5%', left: `${c.left}%`, opacity: 1, rotate: 0 }}
+          animate={{ top: '105%', rotate: 360 }}
+          transition={{ delay: c.delay, duration: c.duration, ease: 'linear', repeat: Infinity }}
+          className="absolute h-2 w-2 rounded-sm"
+          style={{ backgroundColor: c.color }}
+        />
+      ))}
+
+      <motion.div
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 180, damping: 14 }}
+        className="z-10 text-center"
+      >
+        <p className="text-4xl font-black tracking-tight text-amber-300">
+          {winner === 'mafia' ? '🔪 Mafia Win' : '🧑 Villagers Win'}
+        </p>
+      </motion.div>
+
+      <div className="z-10 mt-8 grid max-w-xl grid-cols-3 gap-4 sm:grid-cols-4">
+        {players.map((p, i) => (
+          <motion.div
+            key={p.userId}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + i * 0.05 }}
+            className="flex flex-col items-center gap-1 text-center"
+          >
+            <Avatar id={p.userId} name={p.displayName} size="lg" />
+            <p className="text-xs text-slate-300">{p.displayName}</p>
+            {p.role && (
+              <p className={`text-[11px] font-semibold capitalize ${ROLE_COLORS[p.role] ?? 'text-slate-400'}`}>
+                {ROLE_EMOJI[p.role] ?? ''} {p.role}
+              </p>
+            )}
+          </motion.div>
+        ))}
+      </div>
+
+      <p className="z-10 mt-8 text-xs text-slate-500">Tap anywhere to continue</p>
+    </div>
+  );
+}
