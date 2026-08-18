@@ -25,7 +25,7 @@ function sanitizeText(value: unknown, maxLength: number): string {
 }
 
 const CHAT_TEXT_MAX_LENGTH = 500;
-const IDLE_SWEEP_INTERVAL_MS = 10 * 60 * 1000;
+const IDLE_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
 
 /**
  * Every handler below runs inside this wrapper. A malformed/unexpected payload (or any other
@@ -142,7 +142,7 @@ export function registerHandlers(io: IoServer): void {
   // trigger any explicit "leave", so this is the only thing that ever reclaims them) — without
   // this the in-memory room/game maps grow forever, a slow unauthenticated memory-exhaustion DoS.
   setInterval(() => {
-    for (const roomCode of roomManager.getIdleRoomCodes()) {
+    for (const roomCode of roomManager.getExpiredRoomCodes()) {
       gameManager.endGame(roomCode);
       roomManager.deleteRoom(roomCode);
     }

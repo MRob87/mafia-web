@@ -16,10 +16,15 @@ const MIN_NIGHT_DURATION_SECONDS = 10;
 const MAX_NIGHT_DURATION_SECONDS = 120;
 const DISPLAY_NAME_MAX_LENGTH = 24;
 const MAX_ROLE_COUNT = 20;
-// A room with no activity (no one (re)connecting) for this long, AND fully disconnected right
-// now, is considered abandoned. Requiring both conditions means a quiet-but-live game (e.g. a
-// long discussion phase with everyone still connected) is never at risk of being swept.
-const IDLE_ROOM_TTL_MS = 60 * 60 * 1000;
+// Hard cap on a room's total lifetime, regardless of activity — MRob's call: a room open this
+// long is done, even if people are still actively connected to it.
+const MAX_ROOM_AGE_MS = 2 * 60 * 60 * 1000;
+// A room with zero currently-connected players for this long is considered abandoned (closing
+// a tab doesn't trigger any explicit "leave", so this is the only thing that ever reclaims a
+// room after everyone just wanders off). Short enough to actually clean up promptly, long
+// enough that a phone locking its screen for a minute doesn't wipe an active game out from
+// under its players the moment it briefly drops to zero connections.
+const DISCONNECTED_GRACE_MS = 10 * 60 * 1000;
 
 function clampNightDuration(seconds: number | undefined): number {
   if (seconds === undefined || Number.isNaN(seconds)) return DEFAULT_NIGHT_DURATION_SECONDS;
@@ -241,19 +246,24 @@ export function resetRoomToLobby(roomCode: string): void {
   if (room) room.status = 'lobby';
 }
 
-/** Room codes idle for more than IDLE_ROOM_TTL_MS with every player currently disconnected —
- *  candidates for cleanup. A room with anyone still connected is never returned, no matter how
- *  quiet it's been, so an actively-played game can never be swept out from under its players. */
-export function getIdleRoomCodes(): string[] {
+/** Room codes eligible for cleanup, either because the room has simply been open too long
+ *  (MAX_ROOM_AGE_MS, regardless of activity) or because it currently has no connected players
+ *  and has sat that way past DISCONNECTED_GRACE_MS. */
+export function getExpiredRoomCodes(): string[] {
   const now = Date.now();
-  const idle: string[] = [];
+  const expired: string[] = [];
   for (const [roomCode, room] of rooms) {
+    const ageMs = now - new Date(room.createdAt).getTime();
+    if (ageMs > MAX_ROOM_AGE_MS) {
+      expired.push(roomCode);
+      continue;
+    }
+    const hasConnectedPlayer = room.playerIds.some((id) => !!users.get(id)?.socketId);
+    if (hasConnectedPlayer) continue;
     const lastActive = roomActivity.get(roomCode) ?? 0;
-    if (now - lastActive < IDLE_ROOM_TTL_MS) continue;
-    const allDisconnected = room.playerIds.every((id) => !users.get(id)?.socketId);
-    if (allDisconnected) idle.push(roomCode);
+    if (now - lastActive > DISCONNECTED_GRACE_MS) expired.push(roomCode);
   }
-  return idle;
+  return expired;
 }
 
 /** Removes a room and every user record that belongs to it. Caller is responsible for also
