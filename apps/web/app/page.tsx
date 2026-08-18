@@ -39,8 +39,8 @@ export default function HomePage() {
     };
   }, []);
 
-  function enterRoom(room: Room, userId: string) {
-    saveSession({ userId, displayName, roomCode: room.roomCode });
+  function enterRoom(room: Room, userId: string, sessionToken: string) {
+    saveSession({ userId, sessionToken, displayName, roomCode: room.roomCode });
     router.push(`/room/${room.roomCode}`);
   }
 
@@ -56,7 +56,7 @@ export default function HomePage() {
         pushToast(res.error);
         return;
       }
-      enterRoom(res.room, res.userId);
+      enterRoom(res.room, res.userId, res.sessionToken);
     });
   }
 
@@ -72,7 +72,7 @@ export default function HomePage() {
         pushToast(res.error);
         return;
       }
-      enterRoom(res.room, res.userId);
+      enterRoom(res.room, res.userId, res.sessionToken);
     });
   }
 

@@ -4,17 +4,23 @@ import type { PlayerView, Room, RoleConfig } from './types.js';
 export interface ClientToServerEvents {
   'room:create': (
     payload: { displayName: string; roleConfig?: Partial<RoleConfig>; nightDurationSeconds?: number },
-    ack: (res: { ok: true; room: Room; userId: string } | { ok: false; error: string }) => void
+    ack: (
+      res: { ok: true; room: Room; userId: string; sessionToken: string } | { ok: false; error: string }
+    ) => void
   ) => void;
 
   'room:join': (
     payload: { roomCode: string; displayName: string },
-    ack: (res: { ok: true; room: Room; userId: string } | { ok: false; error: string }) => void
+    ack: (
+      res: { ok: true; room: Room; userId: string; sessionToken: string } | { ok: false; error: string }
+    ) => void
   ) => void;
 
-  /** Fetches current room + game state on demand, e.g. right after a client mounts the room page. */
+  /** Fetches current room + game state on demand, e.g. right after a client mounts the room page.
+   *  sessionToken proves ownership of userId — without it, anyone who merely saw your userId in the
+   *  room roster or a chat message could otherwise reclaim your seat. */
   'room:sync': (
-    payload: { roomCode: string; userId: string },
+    payload: { roomCode: string; userId: string; sessionToken: string },
     ack: (res: { ok: true; room: Room; view: PlayerView | null } | { ok: false; error: string }) => void
   ) => void;
 

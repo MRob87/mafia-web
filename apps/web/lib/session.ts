@@ -1,5 +1,7 @@
 export interface AnonSession {
   userId: string;
+  /** Proves ownership of userId on reconnect — never shown to other players. */
+  sessionToken: string;
   displayName: string;
   roomCode: string;
 }

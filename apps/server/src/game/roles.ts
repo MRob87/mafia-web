@@ -9,12 +9,20 @@ function shuffle<T>(items: T[]): T[] {
   return copy;
 }
 
+// Defensive floor even though callers are expected to sanitize first (roomManager does) —
+// Array(n) throws for negative/non-integer n, which previously crashed the whole process on
+// a single malicious room:create call. Belt-and-suspenders: this can never throw regardless
+// of what reaches it.
+function safeCount(n: number): number {
+  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+}
+
 export function assignRoles(playerIds: string[], roleConfig: RoleConfig): Record<string, Role> {
   const pool: Role[] = [
-    ...Array(roleConfig.mafia).fill('mafia'),
-    ...Array(roleConfig.doctor).fill('doctor'),
-    ...Array(roleConfig.detective).fill('detective'),
-    ...Array(roleConfig.villager).fill('villager'),
+    ...Array(safeCount(roleConfig.mafia)).fill('mafia'),
+    ...Array(safeCount(roleConfig.doctor)).fill('doctor'),
+    ...Array(safeCount(roleConfig.detective)).fill('detective'),
+    ...Array(safeCount(roleConfig.villager)).fill('villager'),
   ];
 
   // Pad/truncate defensively so a mismatched roleConfig never crashes assignment —

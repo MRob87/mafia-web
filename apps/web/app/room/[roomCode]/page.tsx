@@ -198,7 +198,7 @@ export default function RoomPage() {
     // without this we'd miss any state that changed while disconnected (a phase change, a
     // death, chat) — the page would just look frozen/wrong.
     const syncRoom = () => {
-      socket.emit('room:sync', { roomCode: s.roomCode, userId: s.userId }, (res) => {
+      socket.emit('room:sync', { roomCode: s.roomCode, userId: s.userId, sessionToken: s.sessionToken }, (res) => {
         if (!res.ok) {
           pushToast(res.error);
           return;
