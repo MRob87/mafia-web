@@ -95,34 +95,7 @@ export default function HomePage() {
           className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none focus:border-indigo-500"
         />
 
-        <div>
-          <p className="text-sm text-slate-400">Night timer (seconds)</p>
-          <div className="mt-1 grid grid-cols-4 gap-2">
-            {NIGHT_DURATION_OPTIONS.map((seconds) => (
-              <button
-                key={seconds}
-                type="button"
-                onClick={() => setNightDurationSeconds(seconds)}
-                className={
-                  seconds === nightDurationSeconds
-                    ? 'rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white'
-                    : 'rounded-lg border border-slate-700 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800'
-                }
-              >
-                {seconds}s
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={handleCreate}
-          disabled={pending}
-          className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
-        >
-          Create Room
-        </button>
-
+        {/* Joining an existing room is the common path, so it leads. */}
         <div className="flex gap-2">
           <input
             placeholder="Room code"
@@ -133,11 +106,48 @@ export default function HomePage() {
           <button
             onClick={handleJoin}
             disabled={pending}
-            className="shrink-0 rounded-lg border border-slate-700 px-5 py-3 font-semibold text-slate-100 transition-colors hover:bg-slate-800 disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
           >
             Join
           </button>
         </div>
+
+        {/* Creating a room (and its night-timer setting) is collapsed by default — only the
+            host setting up a new game needs it. */}
+        <details className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+          <summary className="cursor-pointer select-none font-semibold text-slate-100">
+            Create a new room
+          </summary>
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="text-sm text-slate-400">Night timer (seconds)</p>
+              <div className="mt-1 grid grid-cols-4 gap-2">
+                {NIGHT_DURATION_OPTIONS.map((seconds) => (
+                  <button
+                    key={seconds}
+                    type="button"
+                    onClick={() => setNightDurationSeconds(seconds)}
+                    className={
+                      seconds === nightDurationSeconds
+                        ? 'rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white'
+                        : 'rounded-lg border border-slate-700 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800'
+                    }
+                  >
+                    {seconds}s
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={handleCreate}
+              disabled={pending}
+              className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
+            >
+              Create Room
+            </button>
+          </div>
+        </details>
       </div>
     </main>
   );
