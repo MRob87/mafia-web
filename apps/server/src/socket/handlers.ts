@@ -165,7 +165,7 @@ export function registerHandlers(io: IoServer): void {
       'room:create',
       safe((payload, ack) => {
         if (!isNonEmptyString(payload?.displayName)) {
-          ack?.({ ok: false, error: 'Enter a display name.' });
+          ack?.({ ok: false, error: 'Enter your name.' });
           return;
         }
         const ip = socket.handshake.address;
@@ -190,7 +190,7 @@ export function registerHandlers(io: IoServer): void {
       'room:join',
       safe((payload, ack) => {
         if (!isNonEmptyString(payload?.roomCode) || !isNonEmptyString(payload?.displayName)) {
-          ack?.({ ok: false, error: 'Enter a display name and room code.' });
+          ack?.({ ok: false, error: 'Enter your name and room code.' });
           return;
         }
         const ip = socket.handshake.address;

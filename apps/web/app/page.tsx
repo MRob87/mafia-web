@@ -46,7 +46,7 @@ export default function HomePage() {
 
   function handleCreate() {
     if (!displayName.trim()) {
-      pushToast('Enter a display name first.');
+      pushToast('Enter your name first.');
       return;
     }
     setPending(true);
@@ -62,7 +62,7 @@ export default function HomePage() {
 
   function handleJoin() {
     if (!displayName.trim() || !roomCode.trim()) {
-      pushToast('Enter a display name and room code.');
+      pushToast('Enter your name and room code.');
       return;
     }
     setPending(true);
@@ -89,7 +89,7 @@ export default function HomePage() {
 
       <div className="mt-6 space-y-4">
         <input
-          placeholder="Display name"
+          placeholder="Your name"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none focus:border-indigo-500"
