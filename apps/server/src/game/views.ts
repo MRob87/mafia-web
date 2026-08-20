@@ -6,11 +6,11 @@ function isVisibleTo(event: GameEvent, viewerRole: Role): boolean {
   return event.visibility.includes(viewerRole);
 }
 
-/** Fellow Mafia see each other's identity while both are alive; everyone's role becomes
- *  public the moment they're eliminated (the standard house rule in physical play), and
- *  every role is revealed once the game ends — the curtain call. */
-function revealRoleFor(viewerRole: Role, targetRole: Role, targetIsAlive: boolean, gameOver: boolean): Role | null {
-  if (gameOver || !targetIsAlive) return targetRole;
+/** Fellow Mafia see each other's identity; every role stays hidden — even for the dead —
+ *  until the game ends, at which point every role is revealed (the curtain call). Death does
+ *  NOT expose a role: eliminated players keep their secret so the town can't confirm reads. */
+function revealRoleFor(viewerRole: Role, targetRole: Role, gameOver: boolean): Role | null {
+  if (gameOver) return targetRole;
   if (viewerRole === 'mafia' && targetRole === 'mafia') return 'mafia';
   return null;
 }
@@ -35,7 +35,7 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
       displayName: getUser(p.userId)?.displayName ?? 'Unknown',
       isAlive: p.isAlive,
       isConnected: p.isConnected,
-      revealedRole: revealRoleFor(self.role, p.role, p.isAlive, game.winner !== null),
+      revealedRole: revealRoleFor(self.role, p.role, game.winner !== null),
     })),
     visibleEvents: game.eventLog.filter((e) => isVisibleTo(e, self.role)),
     lastInvestigationResult: lastInvestigation
