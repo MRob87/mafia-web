@@ -8,13 +8,13 @@ import { Rules } from '../components/Rules';
 import { ToastStack, type ToastMessage } from '../components/Toast';
 import type { Room } from '@mafia/shared';
 
-const NIGHT_DURATION_OPTIONS = [15, 30, 45, 60];
+const NIGHT_DURATION_OPTIONS = [30, 60, 90, 120];
 
 export default function HomePage() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [nightDurationSeconds, setNightDurationSeconds] = useState(30);
+  const [nightDurationSeconds, setNightDurationSeconds] = useState(60);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [pending, setPending] = useState(false);
   const toastIdRef = useRef(0);
