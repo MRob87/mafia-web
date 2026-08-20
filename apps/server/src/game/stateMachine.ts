@@ -8,9 +8,9 @@ export const DEFAULT_NIGHT_DURATION_MS = 30_000;
 export const PHASE_DURATIONS_MS: Partial<Record<Phase, number>> = {
   night: DEFAULT_NIGHT_DURATION_MS,
   // Long enough for the elimination reveal animation to actually play out, not just flash by.
-  night_resolution: 7_000,
-  day_discussion: 60_000,
-  day_voting: 30_000,
+  night_resolution: 15_000,
+  day_discussion: 180_000,
+  day_voting: 60_000,
   // Long enough to also cover last-words: an eliminated player gets this whole window to type.
   elimination: 12_000,
 };
