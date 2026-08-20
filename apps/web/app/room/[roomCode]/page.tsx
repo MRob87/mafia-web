@@ -106,8 +106,7 @@ const selectedActionButtonClass =
   'cursor-default rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white opacity-90';
 const panelClass = 'rounded-lg border border-slate-800 bg-slate-900/60 p-4';
 
-export default function RoomPage() {
-  const params = useParams<{ roomCode: string }>();
+function RoomView({ roomCode }: { roomCode: string }) {
   const router = useRouter();
   const [session, setSession] = useState<AnonSession | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
@@ -161,7 +160,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     const s = loadSession();
-    if (!s || s.roomCode !== params.roomCode) {
+    if (!s || s.roomCode !== roomCode) {
       router.replace('/');
       return;
     }
@@ -229,7 +228,7 @@ export default function RoomPage() {
       socket.off('mafia:chat');
       socket.off('game:mafiaNightStatus');
     };
-  }, [params.roomCode, router]);
+  }, [roomCode, router]);
 
   useEffect(() => {
     if (!view?.phaseEndsAt) return;
@@ -686,4 +685,13 @@ export default function RoomPage() {
       </div>
     </main>
   );
+}
+
+export default function RoomPage() {
+  const params = useParams<{ roomCode: string }>();
+  // Key the room view by roomCode so switching rooms (/room/A -> /room/B) remounts it from
+  // scratch. Without this, React reuses one instance across the param change and the previous
+  // room's roster, chat, and game view linger on screen until the new room's sync overwrites
+  // them — players reported seeing everyone from the room they just left.
+  return <RoomView key={params.roomCode} roomCode={params.roomCode} />;
 }

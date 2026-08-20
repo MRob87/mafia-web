@@ -93,6 +93,18 @@ function mafiaRoomName(roomCode: string): string {
   return `${roomCode}:mafia`;
 }
 
+/** Detach this socket from whatever room it was last in before it joins a different one.
+ *  The browser keeps one shared socket across room switches; without this it stays subscribed
+ *  to the old room's Socket.IO channels and keeps receiving that room's roster/chat broadcasts,
+ *  which then leak onto the new room's screen. No-op when re-entering the same room (reconnect). */
+function leavePreviousRoom(socket: IoSocket, nextRoomCode: string): void {
+  const prev = socketData(socket).roomCode;
+  if (prev && prev !== nextRoomCode) {
+    socket.leave(prev);
+    socket.leave(mafiaRoomName(prev));
+  }
+}
+
 /** Pushes the Mafia team's current night target picks to their private room only. */
 function broadcastMafiaNightStatus(io: IoServer, roomCode: string): void {
   const game = gameManager.getGame(roomCode);
@@ -167,6 +179,7 @@ export function registerHandlers(io: IoServer): void {
           payload.nightDurationSeconds
         );
         roomManager.attachSocket(userId, socket.id);
+        leavePreviousRoom(socket, room.roomCode);
         socket.data = { userId, roomCode: room.roomCode } satisfies SocketData;
         socket.join(room.roomCode);
         ack?.({ ok: true, room, userId, sessionToken });
@@ -192,6 +205,7 @@ export function registerHandlers(io: IoServer): void {
         }
         const { room, userId, sessionToken } = result;
         roomManager.attachSocket(userId, socket.id);
+        leavePreviousRoom(socket, room.roomCode);
         socket.data = { userId, roomCode: room.roomCode } satisfies SocketData;
         socket.join(room.roomCode);
         ack?.({ ok: true, room, userId, sessionToken });
@@ -227,6 +241,7 @@ export function registerHandlers(io: IoServer): void {
         }
 
         roomManager.attachSocket(userId, socket.id);
+        leavePreviousRoom(socket, roomCode);
         socket.data = { userId, roomCode } satisfies SocketData;
         socket.join(roomCode);
 

@@ -57,6 +57,7 @@ describe('cross-room protection', () => {
   let socketA: TestClientSocket;
   let socketB: TestClientSocket;
   let roomACode: string;
+  let roomBCode: string;
   let userBId: string;
 
   beforeAll(async () => {
@@ -65,6 +66,7 @@ describe('cross-room protection', () => {
     const roomA = await createRoom(socketA, 'HostA');
     const roomB = await createRoom(socketB, 'HostB');
     roomACode = roomA.room.roomCode;
+    roomBCode = roomB.room.roomCode;
     userBId = roomB.userId;
   });
 
@@ -92,5 +94,33 @@ describe('cross-room protection', () => {
     await legitPromise;
 
     expect(received).toEqual(['legit']);
+  });
+
+  // Regression: the browser reuses one socket across room switches. Joining a new room used to
+  // leave the socket subscribed to the old room's channel, so it kept receiving that room's
+  // roster/chat broadcasts — they leaked onto the new room's screen. Kept last: it moves socketB
+  // out of room B for good. (Uses room:join, not create, to stay under the 5/min create limit.)
+  it('stops delivering the previous room\'s broadcasts after a socket switches rooms', async () => {
+    // Move socketB from room B into room A.
+    await new Promise<{ ok: boolean }>((resolve) =>
+      socketB.emit('room:join', { roomCode: roomACode, displayName: 'Switcher' }, resolve)
+    );
+
+    // Capture any room:updated for the room socketB just left.
+    const leakedFromRoomB: string[] = [];
+    socketB.on('room:updated', (r) => {
+      if (r.roomCode === roomBCode) leakedFromRoomB.push(r.roomCode);
+    });
+
+    // Trigger a room B broadcast: a fresh socket joins room B, which fans room:updated out to
+    // room B's channel. socketB must no longer be on that channel.
+    const socketC = await connectClient(port);
+    await new Promise<{ ok: boolean }>((resolve) =>
+      socketC.emit('room:join', { roomCode: roomBCode, displayName: 'JoinsB' }, resolve)
+    );
+    await sleep(150);
+
+    expect(leakedFromRoomB).toEqual([]);
+    socketC.close();
   });
 });
