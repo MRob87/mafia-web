@@ -341,6 +341,13 @@ function RoomView({ roomCode }: { roomCode: string }) {
   const avatarOrderIds = view ? view.players.map((p) => p.userId) : room?.playerIds ?? [];
   const investigatedById = new Map((view?.investigationHistory ?? []).map((r) => [r.targetId, r.isMafia]));
 
+  // Voting progress: during day_voting, how many of the living have cast a vote (each votes once;
+  // an explicit No vote counts). When everyone has weighed in there's nothing left to wait for, so
+  // this is the host's cue to skip and keep the pace up.
+  const aliveCount = view ? view.players.filter((p) => p.isAlive).length : 0;
+  const dayVotesCast = view ? Object.values(view.dayVoteCounts).reduce((sum, n) => sum + n, 0) : 0;
+  const allVoted = view?.phase === 'day_voting' && aliveCount > 0 && dayVotesCast >= aliveCount;
+
   const isHost = room?.hostId === session.userId;
   const canStart = isHost && room && room.playerIds.length >= room.minPlayers;
   const background = view ? (PHASE_BACKGROUND[view.phase] ?? 'from-slate-950 to-slate-950') : 'from-slate-950 to-slate-950';
@@ -502,8 +509,11 @@ function RoomView({ roomCode }: { roomCode: string }) {
                       </button>
                     )}
                     {view.phase !== 'game_over' && (
-                      <button onClick={skipPhase} className={ghostButtonClass}>
-                        Skip Phase
+                      <button
+                        onClick={skipPhase}
+                        className={allVoted ? `${primaryButtonClass} animate-pulse` : ghostButtonClass}
+                      >
+                        {allVoted ? 'Skip to Results ▸' : 'Skip Phase'}
                       </button>
                     )}
                     <button onClick={restartGame} className={ghostButtonClass}>
@@ -531,6 +541,12 @@ function RoomView({ roomCode }: { roomCode: string }) {
                   <p className="mt-1 text-xs text-slate-500">
                     A majority is <span className="font-semibold text-slate-300">{view.dayVoteMajorityThreshold}</span>{' '}
                     vote{view.dayVoteMajorityThreshold === 1 ? '' : 's'}. Click your pick again to take it back.
+                  </p>
+                )}
+                {view.phase === 'day_voting' && (
+                  <p className={`mt-1 text-xs font-medium ${allVoted ? 'text-emerald-400' : 'text-slate-400'}`}>
+                    🗳️ {dayVotesCast}/{aliveCount} voted
+                    {allVoted && <span> — everyone&apos;s in{isHost ? '. Skip to results whenever.' : '.'}</span>}
                   </p>
                 )}
                 {!view.self.isAlive && (
