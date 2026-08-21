@@ -18,9 +18,11 @@ A real-time, browser-based multiplayer implementation of the classic social-dedu
 
 ## ✨ Features
 
-- 🎭 **Four roles** — Mafia, Doctor, Detective, and Villager, each with its own night action
+- 🎭 **Four roles** — Mafia, Doctor, and Detective each have a night action; Villagers have only discussion and their vote
 - ⚡ **Fully real-time** — every action, vote, and message is pushed over WebSockets; no page reloads
 - 🔒 **Per-player secrecy** — the server sends each player a *filtered* view; roles, the Detective's results, and the private Mafia channel never leak to those who shouldn't see them
+- 🗳️ **Majority voting** — live tally marks show who's backing each target (and *No vote*); a target only dies on a true majority of the living
+- 📜 **Atmospheric narrator** — a fully-local (no external calls) storyteller sets a themed village, gives each player a character title, and narrates every death, quiet night, and lynch
 - 💬 **Two chat channels** — open Public Chat plus a private Mafia-only channel for night coordination
 - 📱 **Mobile-first** — works across phones and laptops on the same link; reconnects cleanly after a screen lock
 - 🚫 **No signup** — anonymous per-room sessions, nothing to install
@@ -111,7 +113,7 @@ In production, **nginx** terminates TLS and serves everything same-origin: `/soc
 
 ## 🎲 How to Play
 
-Rooms hold **5–12 players**. Roles are assigned at random when the host starts the game, then play alternates between night and day until one side wins.
+Rooms hold **5–12 players**. Roles are assigned at random when the host starts the game, then play alternates between night and day until one side wins. Mafia scale with the room — **1** for 5–6 players, **2** for 7–9, **3** for 10–12 — plus one Doctor and one Detective; everyone else is a Villager. The host can customize these counts at room creation.
 
 **Win conditions**
 - 🧑 **Villagers** (all non-Mafia roles) win by voting out every Mafia member.

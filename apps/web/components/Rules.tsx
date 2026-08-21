@@ -76,8 +76,9 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
               bluff) is a real strategic choice, since no one else can verify it.
             </li>
             <li>
-              Once you're eliminated, you can keep watching, but let the living players run the discussion — don't
-              give away what you saw or suspected.
+              When you're eliminated, your role is revealed to everyone by default (the host can turn this off at
+              room creation). You can keep watching, but let the living run the discussion — don't give away anything
+              else you saw or suspected.
             </li>
           </ul>
         </div>

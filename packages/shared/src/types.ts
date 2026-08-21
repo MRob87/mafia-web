@@ -46,8 +46,8 @@ export interface Room {
   players: Array<{ userId: string; displayName: string }>;
   /** How long the night phase lasts once the game starts. Set at room creation; default 30. */
   nightDurationSeconds: number;
-  /** Host option: when true, an eliminated player's role is revealed to everyone the moment
-   *  they die (classic tabletop "flip the card"). When false (default), roles stay hidden until
+  /** Host option (default true): when true, an eliminated player's role is revealed to everyone
+   *  the moment they die (classic tabletop "flip the card"). When false, roles stay hidden until
    *  the game ends. Set at room creation; locked into the GameInstance when the game starts. */
   revealRolesOnDeath: boolean;
   createdAt: string;
