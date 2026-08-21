@@ -9,7 +9,7 @@ A real-time, browser-based multiplayer implementation of the classic social-dedu
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4.8-010101?logo=socket.io&logoColor=white">
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-65%20passing-brightgreen?logo=vitest&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-68%20passing-brightgreen?logo=vitest&logoColor=white">
 </p>
 
 > **Live:** [mafiaweb.duckdns.org](https://mafiaweb.duckdns.org)
@@ -135,7 +135,7 @@ Rooms hold **5–12 players**. Roles are assigned at random when the host starts
 | Role | Ability |
 |---|---|
 | 🔪 **Mafia** | Each night, agree with fellow Mafia on a player to eliminate. You know your teammates and share a private chat. |
-| 🩺 **Doctor** | Each night, protect one player (including yourself) from the Mafia's kill. |
+| 🩺 **Doctor** | Each night, protect one player from the Mafia's kill — including yourself, unless the host turned on **Doctor can't self-protect** at room creation. |
 | 🔍 **Detective** | Each night, investigate one player to privately learn if they're Mafia. |
 | 🧑 **Villager** | No special ability — discussion and voting are your only tools. |
 

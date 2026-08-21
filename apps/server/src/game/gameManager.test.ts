@@ -3,7 +3,12 @@ import type { Room, RoleConfig } from '@mafia/shared';
 import * as gameManager from './gameManager.js';
 
 let roomCounter = 0;
-function makeRoom(playerCount: number, roleConfig: RoleConfig, nightDurationSeconds = 30): Room {
+function makeRoom(
+  playerCount: number,
+  roleConfig: RoleConfig,
+  nightDurationSeconds = 30,
+  doctorNoSelfSave = false
+): Room {
   roomCounter += 1;
   const roomCode = `ROOM${roomCounter}`;
   const playerIds = Array.from({ length: playerCount }, (_, i) => `p${i}`);
@@ -18,6 +23,7 @@ function makeRoom(playerCount: number, roleConfig: RoleConfig, nightDurationSeco
     players: playerIds.map((id) => ({ userId: id, displayName: id })),
     nightDurationSeconds,
     revealRolesOnDeath: false,
+    doctorNoSelfSave,
     createdAt: new Date().toISOString(),
   };
 }
@@ -155,6 +161,38 @@ describe('submitNightAction', () => {
 
     const error = gameManager.submitNightAction(room.roomCode, detectiveId, targetId);
     expect(error).toBe('You already investigated this player.');
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('blocks a doctor from protecting themselves when doctorNoSelfSave is on', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 30, true);
+    const game = gameManager.startGame(room);
+    const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
+
+    const error = gameManager.submitNightAction(room.roomCode, doctorId, doctorId);
+    expect(error).toBe("You can't protect yourself in this game.");
+    expect(game.nightActions).toHaveLength(0);
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('still lets a doctor protect themselves when doctorNoSelfSave is off (default)', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room);
+    const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
+
+    expect(gameManager.submitNightAction(room.roomCode, doctorId, doctorId)).toBeNull();
+    expect(game.nightActions[0].targetId).toBe(doctorId);
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('with doctorNoSelfSave on, still lets the doctor protect someone else', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 30, true);
+    const game = gameManager.startGame(room);
+    const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
+    const otherId = Object.keys(game.players).find((id) => id !== doctorId)!;
+
+    expect(gameManager.submitNightAction(room.roomCode, doctorId, otherId)).toBeNull();
+    expect(game.nightActions[0].targetId).toBe(otherId);
     gameManager.endGame(room.roomCode);
   });
 

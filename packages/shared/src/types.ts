@@ -45,6 +45,10 @@ export interface Room {
    *  they die (classic tabletop "flip the card"). When false (default), roles stay hidden until
    *  the game ends. Set at room creation; locked into the GameInstance when the game starts. */
   revealRolesOnDeath: boolean;
+  /** Host option: when true, the Doctor may not protect themselves (a common balance house
+   *  rule — unlimited self-protection is hard to counter). When false (default), self-protection
+   *  is allowed. Set at room creation; locked into the GameInstance when the game starts. */
+  doctorNoSelfSave: boolean;
   createdAt: string;
 }
 
@@ -98,6 +102,8 @@ export interface GameInstance {
   nightDurationMs: number;
   /** Locked in from Room.revealRolesOnDeath when the game starts — see that field. */
   revealRolesOnDeath: boolean;
+  /** Locked in from Room.doctorNoSelfSave when the game starts — see that field. */
+  doctorNoSelfSave: boolean;
   /** Who the most recent day vote eliminated, if anyone — they get a last-words window. */
   lastEliminatedId: string | null;
 }
@@ -134,4 +140,7 @@ export interface PlayerView {
   winner: 'mafia' | 'villagers' | null;
   /** Who the most recent day vote eliminated, if anyone — drives the last-words prompt. */
   lastEliminatedId: string | null;
+  /** Mirror of the room's doctor-no-self-save option, so the client can hide the self-target
+   *  affordance and tailor the Doctor's night instructions. Enforced server-side regardless. */
+  doctorNoSelfSave: boolean;
 }

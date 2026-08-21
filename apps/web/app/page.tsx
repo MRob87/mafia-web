@@ -16,6 +16,7 @@ export default function HomePage() {
   const [roomCode, setRoomCode] = useState('');
   const [nightDurationSeconds, setNightDurationSeconds] = useState(60);
   const [revealRolesOnDeath, setRevealRolesOnDeath] = useState(false);
+  const [doctorNoSelfSave, setDoctorNoSelfSave] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [pending, setPending] = useState(false);
   const toastIdRef = useRef(0);
@@ -51,14 +52,18 @@ export default function HomePage() {
       return;
     }
     setPending(true);
-    getSocket().emit('room:create', { displayName, nightDurationSeconds, revealRolesOnDeath }, (res) => {
-      setPending(false);
-      if (!res.ok) {
-        pushToast(res.error);
-        return;
+    getSocket().emit(
+      'room:create',
+      { displayName, nightDurationSeconds, revealRolesOnDeath, doctorNoSelfSave },
+      (res) => {
+        setPending(false);
+        if (!res.ok) {
+          pushToast(res.error);
+          return;
+        }
+        enterRoom(res.room, res.userId, res.sessionToken);
       }
-      enterRoom(res.room, res.userId, res.sessionToken);
-    });
+    );
   }
 
   function handleJoin() {
@@ -152,6 +157,22 @@ export default function HomePage() {
                 <span className="mt-0.5 block text-slate-400">
                   Show an eliminated player&apos;s role to everyone the moment they die (classic rules).
                   Off keeps every role hidden until the game ends.
+                </span>
+              </span>
+            </label>
+
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={doctorNoSelfSave}
+                onChange={(e) => setDoctorNoSelfSave(e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-indigo-600"
+              />
+              <span className="text-sm">
+                <span className="font-semibold text-slate-100">Doctor can&apos;t self-protect</span>
+                <span className="mt-0.5 block text-slate-400">
+                  The Doctor may not protect themselves. Off lets the Doctor protect anyone, including
+                  themselves.
                 </span>
               </span>
             </label>

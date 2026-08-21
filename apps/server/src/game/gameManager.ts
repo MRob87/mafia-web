@@ -52,6 +52,7 @@ export function startGame(room: Room): GameInstance {
     winner: null,
     nightDurationMs: room.nightDurationSeconds * 1000,
     revealRolesOnDeath: room.revealRolesOnDeath,
+    doctorNoSelfSave: room.doctorNoSelfSave,
     lastEliminatedId: null,
   };
 
@@ -105,6 +106,11 @@ export function submitNightAction(roomCode: string, actorId: string, targetId: s
   const actor = game.players[actorId];
   if (!actor?.isAlive) return 'You are not able to act.';
   if (actor.role === 'villager') return 'Villagers have no night action.';
+  // Host balance option: the Doctor may be barred from protecting themselves. Enforced here
+  // server-side so a crafted night:action can't bypass the client hiding the self affordance.
+  if (actor.role === 'doctor' && game.doctorNoSelfSave && targetId === actorId) {
+    return "You can't protect yourself in this game.";
+  }
   // A role never changes mid-game, so re-investigating the same player can never learn
   // anything new — mirrors the client hiding that option once it's already been used.
   if (
