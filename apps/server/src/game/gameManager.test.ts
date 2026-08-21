@@ -45,6 +45,16 @@ describe('startGame', () => {
     gameManager.endGame(room.roomCode);
   });
 
+  it('a 10-player game has exactly 2 mafia, everyone alive at the opening', () => {
+    const room = makeRoom(10, { mafia: 2, doctor: 1, detective: 1, villager: 6 });
+    const game = gameManager.startGame(room);
+    const players = Object.values(game.players);
+    expect(players).toHaveLength(10);
+    expect(players.filter((p) => p.role === 'mafia')).toHaveLength(2);
+    expect(players.every((p) => p.isAlive)).toBe(true);
+    gameManager.endGame(room.roomCode);
+  });
+
   it('locks in nightDurationMs from the room at game start', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 45);
     const game = gameManager.startGame(room);

@@ -84,6 +84,16 @@ describe('finalizeRoleConfig', () => {
     expect(config.mafia + config.doctor + config.detective + config.villager).toBe(5);
   });
 
+  it('sizes a full 10-player room to exactly 2 mafia', () => {
+    const { room } = roomManager.createRoom('Host');
+    for (let i = 0; i < 9; i++) roomManager.joinRoom(room.roomCode, `Guest${i}`);
+    expect(room.playerIds).toHaveLength(10);
+
+    const config = roomManager.finalizeRoleConfig(room);
+    expect(config).toEqual({ mafia: 2, doctor: 1, detective: 1, villager: 6 });
+    expect(config.mafia + config.doctor + config.detective + config.villager).toBe(10);
+  });
+
   it('preserves an explicit override while still recomputing villager as the remainder', () => {
     const { room } = roomManager.createRoom('Host', { mafia: 1 });
     for (let i = 0; i < 4; i++) roomManager.joinRoom(room.roomCode, `Guest${i}`);

@@ -18,6 +18,17 @@ describe('assignRoles', () => {
     expect(counts).toEqual(config);
   });
 
+  it('assigns exactly 2 mafia in a 10-player game (the default 10-seat setup)', () => {
+    const config: RoleConfig = { mafia: 2, doctor: 1, detective: 1, villager: 6 };
+    const assignment = assignRoles(playerIds(10), config);
+
+    expect(Object.keys(assignment)).toHaveLength(10);
+    const counts = { mafia: 0, doctor: 0, detective: 0, villager: 0 };
+    for (const role of Object.values(assignment)) counts[role]++;
+    expect(counts.mafia).toBe(2);
+    expect(counts).toEqual(config);
+  });
+
   it('never throws on a negative role count (regression: Array(-1) crash)', () => {
     const config = { mafia: -1, doctor: -5, detective: 0, villager: 0 } as RoleConfig;
     expect(() => assignRoles(playerIds(5), config)).not.toThrow();

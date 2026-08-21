@@ -183,6 +183,77 @@ describe('resolveDayVote', () => {
   });
 });
 
+describe('resolveDayVote — majority threshold scales with the living', () => {
+  /** A game with `alive` living villagers p0..p(alive-1), plus `dead` already-dead players. */
+  function gameWith(alive: number, dead: number, votes: Record<string, string>): GameInstance {
+    const living = Array.from({ length: alive }, (_, i) => player(`p${i}`, 'villager'));
+    const corpses = Array.from({ length: dead }, (_, i) => player(`d${i}`, 'villager', false));
+    return makeGame([...living, ...corpses], { dayVotes: votes });
+  }
+
+  function votesFor(target: string, count: number): Record<string, string> {
+    const votes: Record<string, string> = {};
+    // Voters p1..pN so a voter is never the target (p0).
+    for (let i = 1; i <= count; i++) votes[`p${i}`] = target;
+    return votes;
+  }
+
+  // majority(n) = floor(n / 2) + 1 — a strict majority of the living.
+  const cases: { alive: number; majority: number }[] = [
+    { alive: 3, majority: 2 },
+    { alive: 4, majority: 3 },
+    { alive: 5, majority: 3 },
+    { alive: 6, majority: 4 },
+    { alive: 7, majority: 4 },
+    { alive: 8, majority: 5 },
+    { alive: 9, majority: 5 },
+    { alive: 10, majority: 6 },
+  ];
+
+  for (const { alive, majority } of cases) {
+    it(`${alive} alive: exactly ${majority} votes eliminates the target`, () => {
+      const game = gameWith(alive, 0, votesFor('p0', majority));
+      resolveDayVote(game);
+      expect(game.players.p0.isAlive).toBe(false);
+      expect(game.lastEliminatedId).toBe('p0');
+    });
+
+    it(`${alive} alive: one short of majority (${majority - 1} votes) eliminates no one`, () => {
+      const game = gameWith(alive, 0, votesFor('p0', majority - 1));
+      resolveDayVote(game);
+      expect(game.players.p0.isAlive).toBe(true);
+      expect(game.lastEliminatedId).toBeNull();
+      expect(game.eventLog).toContainEqual(
+        expect.objectContaining({
+          type: 'system',
+          payload: expect.objectContaining({ message: 'No majority was reached — no one was eliminated.' }),
+        })
+      );
+    });
+  }
+
+  it('counts only the living toward the majority — dead players never raise the bar', () => {
+    // 10 seats but 4 are already dead, so only 6 are alive -> majority is 4, not 6.
+    const four = votesFor('p0', 4);
+    const game = gameWith(6, 4, four);
+    resolveDayVote(game);
+    expect(game.players.p0.isAlive).toBe(false);
+    expect(game.lastEliminatedId).toBe('p0');
+  });
+
+  it('a count that was short becomes a majority once the living shrinks', () => {
+    // 5 votes for p0: short at 10 alive (majority 6), decisive at 9 alive (majority 5).
+    const at10 = gameWith(10, 0, votesFor('p0', 5));
+    resolveDayVote(at10);
+    expect(at10.players.p0.isAlive).toBe(true);
+
+    const at9 = gameWith(9, 1, votesFor('p0', 5));
+    resolveDayVote(at9);
+    expect(at9.players.p0.isAlive).toBe(false);
+    expect(at9.lastEliminatedId).toBe('p0');
+  });
+});
+
 describe('checkWinCondition', () => {
   it('villagers win once no mafia remain alive', () => {
     const game = makeGame([player('mafia1', 'mafia', false), player('v1', 'villager')]);

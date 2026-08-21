@@ -135,6 +135,23 @@ describe('buildPlayerView role reveal', () => {
     gameManager.endGame(room.roomCode);
   });
 
+  it('exposes a majority threshold of 6 for a 10-player game, shrinking as players die', () => {
+    const room = makeRoom(10, { mafia: 2, doctor: 1, detective: 1, villager: 6 });
+    const game = gameManager.startGame(room);
+    const someone = Object.keys(game.players)[0];
+
+    // 10 alive -> majority is floor(10/2)+1 = 6.
+    expect(buildPlayerView(game, someone).dayVoteMajorityThreshold).toBe(6);
+
+    // Kill three players -> 7 alive -> majority is floor(7/2)+1 = 4.
+    Object.values(game.players)
+      .slice(0, 3)
+      .forEach((p) => (p.isAlive = false));
+    expect(buildPlayerView(game, someone).dayVoteMajorityThreshold).toBe(4);
+
+    gameManager.endGame(room.roomCode);
+  });
+
   it('still lets living Mafia see their fellow Mafia (dead or alive)', () => {
     const { room, game, mafia } = startFreshGame();
     const [viewer, partner] = mafia;
