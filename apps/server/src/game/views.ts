@@ -63,6 +63,7 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
 
   return {
     roomCode: game.roomCode,
+    villageName: game.villageName,
     phase: game.phase,
     phaseEndsAt: game.phaseEndsAt,
     dayNumber: game.dayNumber,
@@ -72,6 +73,7 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
       displayName: getUser(p.userId)?.displayName ?? 'Unknown',
       isAlive: p.isAlive,
       isConnected: p.isConnected,
+      title: game.characterTitles[p.userId] ?? '',
       revealedRole: revealRoleFor(
         self.role,
         p.role,

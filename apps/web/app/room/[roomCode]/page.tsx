@@ -57,7 +57,10 @@ function groupEventsByDay(events: GameEvent[]): Array<[number, GameEvent[]]> {
 }
 
 function describeEvent(event: GameEvent, nameById: Map<string, string>): string {
+  // Prefer the narrator's atmospheric line when the server provided one (deaths + system beats).
+  const narration = event.payload.narration as string | undefined;
   if (event.type === 'death') {
+    if (narration) return narration;
     const name = nameById.get(event.payload.targetId as string) ?? 'Someone';
     return event.payload.cause === 'mafia' ? `${name} was killed during the night.` : `${name} was voted out.`;
   }
@@ -69,7 +72,7 @@ function describeEvent(event: GameEvent, nameById: Map<string, string>): string 
     const name = nameById.get(event.payload.actorId as string) ?? 'Someone';
     return `${name} was removed by the host.`;
   }
-  if (event.type === 'system') return String(event.payload.message ?? '');
+  if (event.type === 'system') return narration ?? String(event.payload.message ?? '');
   return '';
 }
 
@@ -285,12 +288,14 @@ function RoomView({ roomCode }: { roomCode: string }) {
 
     const targetId = (eliminationEvent.payload.targetId ?? eliminationEvent.payload.actorId) as string;
     const target = view.players.find((p) => p.userId === targetId);
+    const narration = eliminationEvent.payload.narration as string | undefined;
     const causeText =
-      eliminationEvent.type === 'kicked'
+      narration ??
+      (eliminationEvent.type === 'kicked'
         ? 'Removed by the host.'
         : eliminationEvent.payload.cause === 'mafia'
           ? 'Killed during the night.'
-          : 'Voted out by the town.';
+          : 'Voted out by the town.');
 
     if (eliminationTimeoutRef.current) clearTimeout(eliminationTimeoutRef.current);
     setEliminationInfo({
@@ -465,6 +470,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
           <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-6">
             <section className="space-y-4">
               <div className={panelClass}>
+                {view.villageName && (
+                  <p className="mb-1 text-xs font-medium tracking-wide text-amber-300/80">📜 {view.villageName}</p>
+                )}
                 <h2 className="flex flex-wrap items-baseline gap-3 text-lg font-semibold">
                   <span>
                     Day {view.dayNumber} — {PHASE_LABELS[view.phase] ?? view.phase}
@@ -602,6 +610,7 @@ function RoomView({ roomCode }: { roomCode: string }) {
                           {p.displayName}
                           {p.userId === view.self.userId && <span className="text-slate-500"> (you)</span>}
                         </p>
+                        {p.title && <p className="text-[10px] leading-tight text-amber-300/70 italic">{p.title}</p>}
                         <p className="h-3 text-[10px] leading-tight text-amber-400">
                           {!p.isAlive ? '' : !p.isConnected ? 'Disconnected' : ''}
                         </p>

@@ -3,6 +3,7 @@ import { NO_VOTE_TARGET } from '@mafia/shared';
 import { assignRoles } from './roles.js';
 import { nextPhase, isTimedPhase, phaseDurationMs } from './stateMachine.js';
 import { resolveNightActions, resolveDayVote, checkWinCondition } from './actions.js';
+import { assignSetting, narrateIntro, narrateEpilogue } from './narrator.js';
 
 const games = new Map<string, GameInstance>();
 const timers = new Map<string, NodeJS.Timeout>();
@@ -34,6 +35,7 @@ function clearTimer(roomCode: string): void {
 
 export function startGame(room: Room): GameInstance {
   const roleAssignment: Record<string, Role> = assignRoles(room.playerIds, room.roleConfig);
+  const { villageName, characterTitles } = assignSetting(room.playerIds);
 
   const game: GameInstance = {
     roomCode: room.roomCode,
@@ -53,15 +55,40 @@ export function startGame(room: Room): GameInstance {
     winner: null,
     nightDurationMs: room.nightDurationSeconds * 1000,
     revealRolesOnDeath: room.revealRolesOnDeath,
+    villageName,
+    characterTitles,
     doctorLastTarget: {},
     lastEliminatedId: null,
   };
+
+  const mafiaCount = Object.values(game.players).filter((p) => p.role === 'mafia').length;
+  game.eventLog.push({
+    type: 'system',
+    visibility: 'public',
+    payload: { message: `The game begins in ${villageName}.`, narration: narrateIntro(villageName, mafiaCount) },
+    timestamp: new Date().toISOString(),
+    dayNumber: game.dayNumber,
+  });
 
   games.set(room.roomCode, game);
   // Always open on day discussion — no one dies before anyone has spoken; the first death, if
   // any, comes from a day vote. The rest of the cycle is unchanged (elimination loops to night).
   transitionTo(game, 'day_discussion');
   return game;
+}
+
+/** Appends the closing story beat when a game ends — the moderator's last word over the village. */
+function pushEpilogue(game: GameInstance, winner: 'mafia' | 'villagers'): void {
+  game.eventLog.push({
+    type: 'system',
+    visibility: 'public',
+    payload: {
+      message: winner === 'villagers' ? 'The villagers win.' : 'The Mafia win.',
+      narration: narrateEpilogue(game.villageName, winner),
+    },
+    timestamp: new Date().toISOString(),
+    dayNumber: game.dayNumber,
+  });
 }
 
 function transitionTo(game: GameInstance, phase: Phase): void {
@@ -91,6 +118,7 @@ export function advancePhase(roomCode: string): void {
     const winner = checkWinCondition(game);
     if (winner) {
       game.winner = winner;
+      pushEpilogue(game, winner);
       transitionTo(game, 'game_over');
       onPhaseChange(roomCode);
       return;
@@ -214,6 +242,7 @@ export function kickPlayer(roomCode: string, userId: string): string | null {
   const winner = checkWinCondition(game);
   if (winner) {
     game.winner = winner;
+    pushEpilogue(game, winner);
     transitionTo(game, 'game_over');
   }
   return null;

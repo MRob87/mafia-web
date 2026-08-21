@@ -103,6 +103,11 @@ export interface GameInstance {
   nightDurationMs: number;
   /** Locked in from Room.revealRolesOnDeath when the game starts — see that field. */
   revealRolesOnDeath: boolean;
+  /** Themed setting for flavor narration, assigned at game start (see narrator.ts). */
+  villageName: string;
+  /** Each player's character title (userId -> e.g. "the Baker"), assigned at game start. Public
+   *  flavor — shown next to names and woven into the narrator's atmospheric event text. */
+  characterTitles: Record<string, string>;
   /** Each Doctor's target from the immediately preceding night (doctorId -> targetId), used to
    *  enforce the always-on "no protecting the same player two nights in a row" rule (self counts,
    *  since protecting yourself is just targeting your own id). Rebuilt every night resolution
@@ -118,6 +123,8 @@ export interface GameInstance {
  */
 export interface PlayerView {
   roomCode: string;
+  /** Themed setting for this game's flavor narration (see narrator.ts). '' before a game starts. */
+  villageName: string;
   phase: Phase;
   phaseEndsAt: string | null;
   dayNumber: number;
@@ -131,6 +138,8 @@ export interface PlayerView {
     displayName: string;
     isAlive: boolean;
     isConnected: boolean;
+    /** This player's character title for the current game (e.g. "the Baker"). '' before a game. */
+    title: string;
     /** Only populated when `self` shares a reveal condition with this player (e.g. fellow Mafia). */
     revealedRole: Role | null;
   }>;

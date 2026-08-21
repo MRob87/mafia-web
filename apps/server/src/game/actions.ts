@@ -1,5 +1,13 @@
 import type { GameEvent, GameInstance } from '@mafia/shared';
 import { NO_VOTE_TARGET } from '@mafia/shared';
+import {
+  narrateNightKill,
+  narratePeacefulNight,
+  narrateLynch,
+  narrateNoMajority,
+  narrateNoVotes,
+  narrateNoLynch,
+} from './narrator.js';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -44,7 +52,11 @@ export function resolveNightActions(game: GameInstance): void {
     const event: GameEvent = {
       type: 'death',
       visibility: 'public',
-      payload: { targetId: killTarget, cause: 'mafia' },
+      payload: {
+        targetId: killTarget,
+        cause: 'mafia',
+        narration: narrateNightKill(game.villageName, game.characterTitles[killTarget]),
+      },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     };
@@ -53,7 +65,7 @@ export function resolveNightActions(game: GameInstance): void {
     game.eventLog.push({
       type: 'system',
       visibility: 'public',
-      payload: { message: 'No one died during the night.' },
+      payload: { message: 'No one died during the night.', narration: narratePeacefulNight(game.villageName) },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     });
@@ -118,7 +130,11 @@ export function resolveDayVote(game: GameInstance): void {
     const event: GameEvent = {
       type: 'death',
       visibility: 'public',
-      payload: { targetId: eliminated, cause: 'vote' },
+      payload: {
+        targetId: eliminated,
+        cause: 'vote',
+        narration: narrateLynch(game.villageName, game.characterTitles[eliminated]),
+      },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     };
@@ -132,10 +148,16 @@ export function resolveDayVote(game: GameInstance): void {
         : noVoteReachedMajority
           ? 'The town voted not to eliminate anyone.'
           : 'No majority was reached — no one was eliminated.';
+    const narration =
+      votes.length === 0
+        ? narrateNoVotes(game.villageName)
+        : noVoteReachedMajority
+          ? narrateNoLynch(game.villageName)
+          : narrateNoMajority(game.villageName);
     game.eventLog.push({
       type: 'system',
       visibility: 'public',
-      payload: { message },
+      payload: { message, narration },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     });
