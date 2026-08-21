@@ -19,12 +19,6 @@ import type { GameEvent, PlayerView, Room } from '@mafia/shared';
 
 const ACTING_ROLES = new Set(['mafia', 'doctor', 'detective']);
 
-const NIGHT_ROLE_LABELS: Record<'mafia' | 'doctor' | 'detective', string> = {
-  mafia: 'Mafia',
-  doctor: 'Doctor',
-  detective: 'Detective',
-};
-
 const PHASE_LABELS: Record<string, string> = {
   role_assign: 'Assigning Roles',
   night: 'Night',
@@ -354,11 +348,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
   const dayVotesCast = view ? Object.values(view.dayVoteCounts).reduce((sum, n) => sum + n, 0) : 0;
   const allVoted = view?.phase === 'day_voting' && aliveCount > 0 && dayVotesCast >= aliveCount;
 
-  // Host-only night pacing (server only populates nightActionProgress for the host during night).
-  const nightProgress = view?.nightActionProgress ?? null;
-  const nightRoles = (['mafia', 'doctor', 'detective'] as const).filter((r) => (nightProgress?.[r].expected ?? 0) > 0);
-  const nightAllActed =
-    view?.phase === 'night' && nightProgress != null && nightRoles.every((r) => nightProgress[r].submitted >= nightProgress[r].expected);
+  // Host-only night pacing: the server sends a boolean (all acting players done?) to the host only.
+  const nightStatusShown = view?.phase === 'night' && view.nightActionsComplete !== null;
+  const nightAllActed = view?.phase === 'night' && view.nightActionsComplete === true;
   const skipReady = allVoted || nightAllActed;
 
   const isHost = room?.hostId === session.userId;
@@ -562,13 +554,12 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     {allVoted && <span> — everyone&apos;s in{isHost ? '. Skip to results whenever.' : '.'}</span>}
                   </p>
                 )}
-                {view.phase === 'night' && nightProgress && (
+                {nightStatusShown && (
                   <p className={`mt-1 text-xs font-medium ${nightAllActed ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    🌙 Night actions —{' '}
-                    {nightRoles
-                      .map((r) => `${NIGHT_ROLE_LABELS[r]} ${nightProgress[r].submitted}/${nightProgress[r].expected}`)
-                      .join(' · ')}
-                    {nightAllActed && <span> — all in. Skip to morning whenever.</span>}
+                    🌙{' '}
+                    {nightAllActed
+                      ? 'All players have finished their night actions — skip to morning whenever.'
+                      : 'Waiting on night actions…'}
                   </p>
                 )}
                 {!view.self.isAlive && (

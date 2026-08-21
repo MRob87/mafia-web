@@ -1,5 +1,7 @@
-import type { GameEvent, GameInstance, NightActionProgress, PlayerView, Role } from '@mafia/shared';
+import type { GameEvent, GameInstance, PlayerView, Role } from '@mafia/shared';
 import { getUser } from '../rooms/roomManager.js';
+
+const ACTING_ROLES: ReadonlySet<Role> = new Set<Role>(['mafia', 'doctor', 'detective']);
 
 function isVisibleTo(event: GameEvent, viewerRole: Role): boolean {
   if (event.visibility === 'public') return true;
@@ -31,19 +33,13 @@ export function buildPlayerView(game: GameInstance, userId: string, isHost = fal
     throw new Error(`buildPlayerView: user ${userId} is not part of game ${game.roomCode}`);
   }
 
-  // Host-only night pacing: per acting role, how many of the living have submitted (distinct
-  // actors — resubmits replace). Aggregate only, so it never leaks a target or an identity.
-  let nightActionProgress: NightActionProgress | null = null;
+  // Host-only night pacing: true once every living acting player has submitted (distinct actors —
+  // resubmits replace). Just a boolean — no counts, targets, or identities ever leave the server.
+  let nightActionsComplete: boolean | null = null;
   if (isHost && game.phase === 'night') {
-    const progressFor = (role: Role) => ({
-      expected: Object.values(game.players).filter((p) => p.isAlive && p.role === role).length,
-      submitted: new Set(game.nightActions.filter((a) => a.role === role).map((a) => a.actorId)).size,
-    });
-    nightActionProgress = {
-      mafia: progressFor('mafia'),
-      doctor: progressFor('doctor'),
-      detective: progressFor('detective'),
-    };
+    const expected = Object.values(game.players).filter((p) => p.isAlive && ACTING_ROLES.has(p.role)).length;
+    const submitted = new Set(game.nightActions.map((a) => a.actorId)).size;
+    nightActionsComplete = submitted >= expected;
   }
 
   const ownInvestigations = game.investigationResults.filter((r) => r.detectiveId === userId);
@@ -112,6 +108,6 @@ export function buildPlayerView(game: GameInstance, userId: string, isHost = fal
     mafiaVoteCounts,
     mafiaVoteMajorityThreshold,
     myMafiaVote,
-    nightActionProgress,
+    nightActionsComplete,
   };
 }

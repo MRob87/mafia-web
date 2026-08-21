@@ -35,7 +35,8 @@ describe('buildPlayerView role reveal', () => {
     const mafia = players.filter((p) => p.role === 'mafia');
     const villager = players.find((p) => p.role === 'villager')!;
     const detective = players.find((p) => p.role === 'detective')!;
-    return { room, game, mafia, villager, detective };
+    const doctor = players.find((p) => p.role === 'doctor')!;
+    return { room, game, mafia, villager, detective, doctor };
   }
 
   it('does NOT expose a dead player\'s role to the town while the game is ongoing', () => {
@@ -111,26 +112,26 @@ describe('buildPlayerView role reveal', () => {
     gameManager.endGame(room.roomCode);
   });
 
-  it('gives the host night-action progress (aggregate only), and nobody else', () => {
-    const { room, game, mafia, villager, detective } = startFreshGame();
+  it('tells the host only whether all night actions are in, and nobody else', () => {
+    const { room, game, mafia, doctor, villager, detective } = startFreshGame();
     game.phase = 'night';
-    // One of two mafia and the detective have acted; the doctor and the other mafia have not.
+    // Partial: one of two mafia and the detective have acted; doctor + other mafia have not.
     game.nightActions = [
       { actorId: mafia[0].userId, role: 'mafia', targetId: villager.userId, submittedAt: '' },
       { actorId: detective.userId, role: 'detective', targetId: villager.userId, submittedAt: '' },
     ];
+    expect(buildPlayerView(game, mafia[0].userId, true).nightActionsComplete).toBe(false);
 
-    // Host view (isHost = true) sees aggregate counts — no targets, no identities.
-    const hostView = buildPlayerView(game, mafia[0].userId, true);
-    expect(hostView.nightActionProgress).toEqual({
-      mafia: { submitted: 1, expected: 2 },
-      doctor: { submitted: 0, expected: 1 },
-      detective: { submitted: 1, expected: 1 },
-    });
+    // A non-host (even a fellow mafia) never receives the indicator.
+    expect(buildPlayerView(game, mafia[1].userId, false).nightActionsComplete).toBeNull();
+    expect(buildPlayerView(game, villager.userId, false).nightActionsComplete).toBeNull();
 
-    // A non-host (even a fellow mafia) never receives the progress.
-    expect(buildPlayerView(game, mafia[1].userId, false).nightActionProgress).toBeNull();
-    expect(buildPlayerView(game, villager.userId, false).nightActionProgress).toBeNull();
+    // Once every living acting player has submitted, the host sees complete.
+    game.nightActions.push(
+      { actorId: mafia[1].userId, role: 'mafia', targetId: villager.userId, submittedAt: '' },
+      { actorId: doctor.userId, role: 'doctor', targetId: villager.userId, submittedAt: '' }
+    );
+    expect(buildPlayerView(game, mafia[0].userId, true).nightActionsComplete).toBe(true);
 
     gameManager.endGame(room.roomCode);
   });
