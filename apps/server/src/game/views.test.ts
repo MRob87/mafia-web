@@ -111,6 +111,30 @@ describe('buildPlayerView role reveal', () => {
     gameManager.endGame(room.roomCode);
   });
 
+  it('gives the host night-action progress (aggregate only), and nobody else', () => {
+    const { room, game, mafia, villager, detective } = startFreshGame();
+    game.phase = 'night';
+    // One of two mafia and the detective have acted; the doctor and the other mafia have not.
+    game.nightActions = [
+      { actorId: mafia[0].userId, role: 'mafia', targetId: villager.userId, submittedAt: '' },
+      { actorId: detective.userId, role: 'detective', targetId: villager.userId, submittedAt: '' },
+    ];
+
+    // Host view (isHost = true) sees aggregate counts — no targets, no identities.
+    const hostView = buildPlayerView(game, mafia[0].userId, true);
+    expect(hostView.nightActionProgress).toEqual({
+      mafia: { submitted: 1, expected: 2 },
+      doctor: { submitted: 0, expected: 1 },
+      detective: { submitted: 1, expected: 1 },
+    });
+
+    // A non-host (even a fellow mafia) never receives the progress.
+    expect(buildPlayerView(game, mafia[1].userId, false).nightActionProgress).toBeNull();
+    expect(buildPlayerView(game, villager.userId, false).nightActionProgress).toBeNull();
+
+    gameManager.endGame(room.roomCode);
+  });
+
   it('exposes the Mafia night tally to Mafia only — never to the town', () => {
     const { room, game, mafia, villager, detective } = startFreshGame();
     const [m1, m2] = mafia;

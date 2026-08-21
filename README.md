@@ -9,7 +9,7 @@ A real-time, browser-based multiplayer implementation of the classic social-dedu
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4.8-010101?logo=socket.io&logoColor=white">
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-105%20passing-brightgreen?logo=vitest&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-106%20passing-brightgreen?logo=vitest&logoColor=white">
 </p>
 
 > **Live:** [mafiaweb.duckdns.org](https://mafiaweb.duckdns.org)

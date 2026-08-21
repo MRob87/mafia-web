@@ -81,6 +81,15 @@ export interface GameEvent {
   dayNumber: number;
 }
 
+/** Host-only night-action progress: how many of each acting role (of those still alive) have
+ *  submitted a night action. Aggregate counts ONLY — never targets or identities — so it's safe
+ *  to show without leaking who did what. Present on the host's view during the night; null else. */
+export interface NightActionProgress {
+  mafia: { submitted: number; expected: number };
+  doctor: { submitted: number; expected: number };
+  detective: { submitted: number; expected: number };
+}
+
 export interface InvestigationResult {
   detectiveId: string;
   targetId: string;
@@ -180,4 +189,8 @@ export interface PlayerView {
   mafiaVoteMajorityThreshold: number;
   /** This Mafia viewer's current night target, or null. null for non-Mafia viewers. */
   myMafiaVote: string | null;
+  /** HOST ONLY, during the night: how many acting-role players have submitted their action, so
+   *  the host can tell when the night is effectively over and skip. null for non-host / non-night.
+   *  Aggregate counts only — reveals no targets or identities. */
+  nightActionProgress: NightActionProgress | null;
 }

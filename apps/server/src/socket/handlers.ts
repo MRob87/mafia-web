@@ -87,7 +87,7 @@ function broadcastGameViews(io: IoServer, roomCode: string): void {
   for (const playerId of room.playerIds) {
     const user = roomManager.getUser(playerId);
     if (!user?.socketId) continue;
-    io.to(user.socketId).emit('game:view', buildPlayerView(game, playerId));
+    io.to(user.socketId).emit('game:view', buildPlayerView(game, playerId, room.hostId === playerId));
   }
 }
 
@@ -113,12 +113,13 @@ function leavePreviousRoom(socket: IoSocket, nextRoomCode: string): void {
 function broadcastMafiaViews(io: IoServer, roomCode: string): void {
   const game = gameManager.getGame(roomCode);
   if (!game) return;
+  const room = roomManager.getRoom(roomCode);
 
   for (const player of Object.values(game.players)) {
     if (player.role !== 'mafia') continue;
     const socketId = roomManager.getUser(player.userId)?.socketId;
     if (!socketId) continue;
-    io.to(socketId).emit('game:view', buildPlayerView(game, player.userId));
+    io.to(socketId).emit('game:view', buildPlayerView(game, player.userId, room?.hostId === player.userId));
   }
 }
 
@@ -247,7 +248,7 @@ export function registerHandlers(io: IoServer): void {
         const game = gameManager.getGame(roomCode);
         if (game) gameManager.setPlayerConnected(roomCode, userId, true);
         if (game?.players[userId]?.role === 'mafia') socket.join(mafiaRoomName(roomCode));
-        const view = game ? buildPlayerView(game, userId) : null;
+        const view = game ? buildPlayerView(game, userId, room.hostId === userId) : null;
 
         ack?.({ ok: true, room, view });
         broadcastRoomUpdate(io, room);

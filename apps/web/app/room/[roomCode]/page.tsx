@@ -19,6 +19,12 @@ import type { GameEvent, PlayerView, Room } from '@mafia/shared';
 
 const ACTING_ROLES = new Set(['mafia', 'doctor', 'detective']);
 
+const NIGHT_ROLE_LABELS: Record<'mafia' | 'doctor' | 'detective', string> = {
+  mafia: 'Mafia',
+  doctor: 'Doctor',
+  detective: 'Detective',
+};
+
 const PHASE_LABELS: Record<string, string> = {
   role_assign: 'Assigning Roles',
   night: 'Night',
@@ -348,6 +354,13 @@ function RoomView({ roomCode }: { roomCode: string }) {
   const dayVotesCast = view ? Object.values(view.dayVoteCounts).reduce((sum, n) => sum + n, 0) : 0;
   const allVoted = view?.phase === 'day_voting' && aliveCount > 0 && dayVotesCast >= aliveCount;
 
+  // Host-only night pacing (server only populates nightActionProgress for the host during night).
+  const nightProgress = view?.nightActionProgress ?? null;
+  const nightRoles = (['mafia', 'doctor', 'detective'] as const).filter((r) => (nightProgress?.[r].expected ?? 0) > 0);
+  const nightAllActed =
+    view?.phase === 'night' && nightProgress != null && nightRoles.every((r) => nightProgress[r].submitted >= nightProgress[r].expected);
+  const skipReady = allVoted || nightAllActed;
+
   const isHost = room?.hostId === session.userId;
   const canStart = isHost && room && room.playerIds.length >= room.minPlayers;
   const background = view ? (PHASE_BACKGROUND[view.phase] ?? 'from-slate-950 to-slate-950') : 'from-slate-950 to-slate-950';
@@ -511,9 +524,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     {view.phase !== 'game_over' && (
                       <button
                         onClick={skipPhase}
-                        className={allVoted ? `${primaryButtonClass} animate-pulse` : ghostButtonClass}
+                        className={skipReady ? `${primaryButtonClass} animate-pulse` : ghostButtonClass}
                       >
-                        {allVoted ? 'Skip to Results ▸' : 'Skip Phase'}
+                        {nightAllActed ? 'Skip to Morning ▸' : allVoted ? 'Skip to Results ▸' : 'Skip Phase'}
                       </button>
                     )}
                     <button onClick={restartGame} className={ghostButtonClass}>
@@ -547,6 +560,15 @@ function RoomView({ roomCode }: { roomCode: string }) {
                   <p className={`mt-1 text-xs font-medium ${allVoted ? 'text-emerald-400' : 'text-slate-400'}`}>
                     🗳️ {dayVotesCast}/{aliveCount} voted
                     {allVoted && <span> — everyone&apos;s in{isHost ? '. Skip to results whenever.' : '.'}</span>}
+                  </p>
+                )}
+                {view.phase === 'night' && nightProgress && (
+                  <p className={`mt-1 text-xs font-medium ${nightAllActed ? 'text-emerald-400' : 'text-slate-400'}`}>
+                    🌙 Night actions —{' '}
+                    {nightRoles
+                      .map((r) => `${NIGHT_ROLE_LABELS[r]} ${nightProgress[r].submitted}/${nightProgress[r].expected}`)
+                      .join(' · ')}
+                    {nightAllActed && <span> — all in. Skip to morning whenever.</span>}
                   </p>
                 )}
                 {!view.self.isAlive && (
