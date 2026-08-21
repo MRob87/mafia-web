@@ -133,7 +133,7 @@ export function resolveDayVote(game: GameInstance): void {
       payload: {
         targetId: eliminated,
         cause: 'vote',
-        narration: narrateLynch(game.villageName, game.characterTitles[eliminated]),
+        narration: narrateLynch(game.theme, game.villageName, game.characterTitles[eliminated]),
       },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
@@ -152,8 +152,8 @@ export function resolveDayVote(game: GameInstance): void {
       votes.length === 0
         ? narrateNoVotes(game.theme, game.villageName)
         : noVoteReachedMajority
-          ? narrateNoLynch(game.villageName)
-          : narrateNoMajority(game.villageName);
+          ? narrateNoLynch(game.theme, game.villageName)
+          : narrateNoMajority(game.theme, game.villageName);
     game.eventLog.push({
       type: 'system',
       visibility: 'public',

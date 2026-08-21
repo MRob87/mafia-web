@@ -122,6 +122,11 @@ describe('createRoom theme', () => {
     expect(room.theme).toBe('werewolf');
   });
 
+  it('accepts the space theme', () => {
+    const { room } = roomManager.createRoom('Host', undefined, undefined, undefined, 'space');
+    expect(room.theme).toBe('space');
+  });
+
   it('falls back to mafia for an unknown theme', () => {
     const { room } = roomManager.createRoom('Host', undefined, undefined, undefined, 'dragons' as never);
     expect(room.theme).toBe('mafia');

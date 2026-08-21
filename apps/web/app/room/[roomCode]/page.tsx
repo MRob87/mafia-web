@@ -90,7 +90,7 @@ function roleInstructions(phase: string, role: string, isAlive: boolean, killerT
   }
   if (phase === 'day_discussion') return 'Discuss with the group who you suspect is Mafia. Voting opens next.';
   if (phase === 'day_voting')
-    return "Vote for who you think is Mafia, or pick No vote. A player is eliminated only if they reach a majority of the living — a tie or short plurality means no one dies.";
+    return `Vote for who you think is one of the ${killerTeam}, or pick No vote. A player is eliminated only if they reach a majority of the living — a tie or short plurality means no one dies.`;
   return null;
 }
 

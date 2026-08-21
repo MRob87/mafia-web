@@ -9,7 +9,7 @@ A real-time, browser-based multiplayer implementation of the classic social-dedu
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4.8-010101?logo=socket.io&logoColor=white">
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-116%20passing-brightgreen?logo=vitest&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-119%20passing-brightgreen?logo=vitest&logoColor=white">
 </p>
 
 > **Live:** [mafiaweb.duckdns.org](https://mafiaweb.duckdns.org)
@@ -23,7 +23,7 @@ A real-time, browser-based multiplayer implementation of the classic social-dedu
 - 🔒 **Per-player secrecy** — the server sends each player a *filtered* view; roles, the Detective's results, and the private Mafia channel never leak to those who shouldn't see them
 - 🗳️ **Majority voting** — live tally marks show who's backing each target (and *No vote*); a target only dies on a true majority of the living
 - 📜 **Atmospheric narrator** — a fully-local (no external calls) storyteller sets a themed village, gives each player a character title, and narrates every death, quiet night, and lynch
-- 🐺 **Editions** — the host picks a skin per room at creation (**Mafia** or **Werewolf**); the engine is identical, only the role names, emoji, and narration change
+- 🐺 **Editions** — the host picks a skin per room at creation (**Mafia**, **Werewolf**, or **Space Station**); the engine is identical, only the role names, emoji, and narration change
 - 💬 **Two chat channels** — open Public Chat plus a private Mafia-only channel for night coordination
 - 📱 **Mobile-first** — works across phones and laptops on the same link; reconnects cleanly after a screen lock
 - 🚫 **No signup** — anonymous per-room sessions, nothing to install

@@ -10,9 +10,9 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
       <summary className="cursor-pointer select-none font-semibold text-slate-100">{title}</summary>
       <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-300">
         <p>
-          <strong className="text-slate-100">Objective:</strong> Villagers (every non-{theme.roleLabels.mafia} role)
-          win by rooting out every {theme.roleLabels.mafia} before they&apos;re outnumbered. The {killers} win the
-          moment they equal or outnumber everyone left alive.
+          <strong className="text-slate-100">Objective:</strong> The {theme.townTeam} (every non-
+          {theme.roleLabels.mafia} role) win by rooting out every {theme.roleLabels.mafia} before they&apos;re
+          outnumbered. The {killers} win the moment they equal or outnumber everyone left alive.
         </p>
 
         <div>
@@ -21,7 +21,7 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
             <li>
               <strong className="text-slate-100">Night</strong> — the {killers} secretly agree on someone to eliminate,
               the {theme.roleLabels.doctor} secretly protects someone, and the {theme.roleLabels.detective} secretly
-              investigates someone. Villagers have no action and simply wait.
+              investigates someone. {theme.roleLabels.villager}s have no action and simply wait.
             </li>
             <li>
               <strong className="text-slate-100">Night Results</strong> — a short pause where everyone learns what

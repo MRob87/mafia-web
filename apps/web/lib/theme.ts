@@ -16,6 +16,8 @@ export interface ThemeConfig {
   killerChatLabel: string;
   /** The killer team's name, for the win banner ("Mafia win" / "Werewolves win"). */
   killerTeam: string;
+  /** The innocent majority's collective name ("Villagers" / "Crew"), for the win banner etc. */
+  townTeam: string;
 }
 
 export const THEMES: Record<ThemeId, ThemeConfig> = {
@@ -26,6 +28,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     roleEmoji: { mafia: '🔪', doctor: '🩺', detective: '🔍', villager: '🧑' },
     killerChatLabel: 'Mafia Chat',
     killerTeam: 'Mafia',
+    townTeam: 'Villagers',
   },
   werewolf: {
     id: 'werewolf',
@@ -34,6 +37,16 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     roleEmoji: { mafia: '🐺', doctor: '🌿', detective: '🔮', villager: '🧑' },
     killerChatLabel: 'Werewolf Den',
     killerTeam: 'Werewolves',
+    townTeam: 'Villagers',
+  },
+  space: {
+    id: 'space',
+    name: 'Space Station',
+    roleLabels: { mafia: 'Saboteur', doctor: 'Medic', detective: 'Security Officer', villager: 'Crewmate' },
+    roleEmoji: { mafia: '👾', doctor: '💉', detective: '🛡️', villager: '🧑‍🚀' },
+    killerChatLabel: 'Saboteur Comms',
+    killerTeam: 'Saboteurs',
+    townTeam: 'Crew',
   },
 };
 

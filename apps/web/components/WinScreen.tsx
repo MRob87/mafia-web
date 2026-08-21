@@ -50,7 +50,7 @@ export function WinScreen({
         <p className="text-4xl font-black tracking-tight text-amber-300">
           {winner === 'mafia'
             ? `${theme.roleEmoji.mafia} ${theme.killerTeam} Win`
-            : `${theme.roleEmoji.villager} Villagers Win`}
+            : `${theme.roleEmoji.villager} ${theme.townTeam} Win`}
         </p>
       </motion.div>
 
