@@ -26,14 +26,21 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
               suspect.
             </li>
             <li>
-              <strong className="text-slate-100">Day — Voting</strong> — everyone votes for who to eliminate.
-              Whoever gets the most votes is eliminated; a tie eliminates no one.
+              <strong className="text-slate-100">Day — Voting</strong> — everyone votes for who to eliminate, or
+              picks <em>No vote</em> for no lynch. A player is eliminated <strong>only if they reach a majority</strong>{' '}
+              of the living; a tie, a plurality that falls short, or <em>No vote</em> all mean no one is eliminated.
+              Live tally marks show who is voting for whom, and a target that reaches a majority glows red.
             </li>
             <li>
               <strong className="text-slate-100">Elimination</strong> — whoever was voted out gets a short window
               for last words before the next night begins.
             </li>
           </ul>
+          <p className="mt-1 text-slate-400">
+            By default the game opens on Day (Discussion), so no one dies before anyone has spoken — the first death
+            comes from a vote. The host can add time to any phase, and controls a few room options (like starting on
+            Night instead) when creating the room.
+          </p>
         </div>
 
         <div>
@@ -45,7 +52,7 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
             </li>
             <li>
               <strong className="text-emerald-400">🩺 Doctor</strong> — Each night, choose a player to protect from
-              the Mafia's kill. You may protect yourself.
+              the Mafia's kill. You may protect yourself, but not the same player two nights in a row.
             </li>
             <li>
               <strong className="text-sky-400">🔍 Detective</strong> — Each night, investigate a player to privately

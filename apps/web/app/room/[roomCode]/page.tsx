@@ -84,7 +84,8 @@ function roleInstructions(phase: string, role: string, isAlive: boolean): string
     return 'You have no night action. Sit tight until morning.';
   }
   if (phase === 'day_discussion') return 'Discuss with the group who you suspect is Mafia. Voting opens next.';
-  if (phase === 'day_voting') return 'Vote for who you think is Mafia. Whoever gets the most votes is eliminated.';
+  if (phase === 'day_voting')
+    return "Vote for who you think is Mafia, or pick No vote. A player is eliminated only if they reach a majority of the living — a tie or short plurality means no one dies.";
   return null;
 }
 
