@@ -14,9 +14,9 @@ import { WinScreen } from '../../../components/WinScreen';
 import { PhaseTransitionBanner } from '../../../components/PhaseTransitionBanner';
 import { ToastStack, type ToastMessage } from '../../../components/Toast';
 import { ROLE_COLORS } from '../../../lib/roleTheme';
-import { getTheme, ThemeProvider } from '../../../lib/theme';
+import { getTheme, ThemeProvider, THEMES } from '../../../lib/theme';
 import { NO_VOTE_TARGET } from '@mafia/shared';
-import type { GameEvent, PlayerView, Role, Room } from '@mafia/shared';
+import type { GameEvent, PlayerView, Role, Room, ThemeId } from '@mafia/shared';
 
 const ACTING_ROLES = new Set(['mafia', 'doctor', 'detective']);
 
@@ -411,6 +411,11 @@ function RoomView({ roomCode }: { roomCode: string }) {
     getSocket().emit('room:extendPhase', { roomCode: session.roomCode });
   }
 
+  function setRoomTheme(themeId: string) {
+    if (!session) return;
+    getSocket().emit('room:setTheme', { roomCode: session.roomCode, theme: themeId as ThemeId });
+  }
+
   function restartGame() {
     if (!session) return;
     if (!window.confirm('Restart the game? Everyone will be sent back to the lobby.')) return;
@@ -529,6 +534,18 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     <button onClick={restartGame} className={ghostButtonClass}>
                       Restart Game
                     </button>
+                    <select
+                      value={theme.id}
+                      onChange={(e) => setRoomTheme(e.target.value)}
+                      className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300 outline-none focus:border-indigo-500"
+                      aria-label="Change theme"
+                    >
+                      {Object.values(THEMES).map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.roleEmoji.mafia} {t.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
 

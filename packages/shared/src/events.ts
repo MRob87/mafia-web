@@ -40,6 +40,10 @@ export interface ClientToServerEvents {
   /** Host only: adds a fixed amount of time (server-decided) to the current timed phase. */
   'room:extendPhase': (payload: { roomCode: string }) => void;
 
+  /** Host only: switches the room's cosmetic theme, even mid-game. The engine is untouched;
+   *  the setting and character titles re-roll for the new theme and every client re-skins. */
+  'room:setTheme': (payload: { roomCode: string; theme: ThemeId }) => void;
+
   /** Host only: removes a player from the lobby, or eliminates them if a game is running. */
   'room:kick': (payload: { roomCode: string; targetUserId: string }) => void;
 

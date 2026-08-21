@@ -330,6 +330,25 @@ export function registerHandlers(io: IoServer): void {
     );
 
     socket.on(
+      'room:setTheme',
+      safe(({ roomCode, theme }) => {
+        const { userId } = socketData(socket);
+        const room = roomManager.getRoom(roomCode);
+        if (!room || !userId) return;
+        if (room.hostId !== userId) {
+          socket.emit('error', { message: 'Only the host can change the theme.' });
+          return;
+        }
+        const updated = roomManager.setRoomTheme(roomCode, theme);
+        if (!updated) return; // unknown theme value — ignore
+        // If a game is running, re-skin it too (re-rolls the setting + titles for the new theme).
+        gameManager.setTheme(roomCode, updated.theme);
+        broadcastRoomUpdate(io, updated);
+        broadcastGameViews(io, roomCode);
+      })
+    );
+
+    socket.on(
       'room:kick',
       safe(({ roomCode, targetUserId }) => {
         const { userId } = socketData(socket);

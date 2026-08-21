@@ -1,4 +1,4 @@
-import type { GameInstance, NightAction, Phase, Room, Role } from '@mafia/shared';
+import type { GameInstance, NightAction, Phase, Room, Role, ThemeId } from '@mafia/shared';
 import { NO_VOTE_TARGET } from '@mafia/shared';
 import { assignRoles } from './roles.js';
 import { nextPhase, isTimedPhase, phaseDurationMs } from './stateMachine.js';
@@ -218,6 +218,27 @@ export function submitLastWords(roomCode: string, userId: string, text: string):
     dayNumber: game.dayNumber,
   });
   return null;
+}
+
+/** Host action: switches a running game's cosmetic theme mid-story. The engine state (roles,
+ *  votes, phase) is untouched — but the setting name and character titles are theme-specific,
+ *  so they re-roll for the new theme, and a public beat marks the scene change. Past narration
+ *  in the event log stays in the old voice, as history. */
+export function setTheme(roomCode: string, theme: ThemeId): void {
+  const game = games.get(roomCode);
+  if (!game || game.theme === theme) return;
+
+  const { villageName, characterTitles } = assignSetting(Object.keys(game.players), theme);
+  game.theme = theme;
+  game.villageName = villageName;
+  game.characterTitles = characterTitles;
+  game.eventLog.push({
+    type: 'system',
+    visibility: 'public',
+    payload: { message: `The scene changes — the story now unfolds in ${villageName}.` },
+    timestamp: new Date().toISOString(),
+    dayNumber: game.dayNumber,
+  });
 }
 
 /** Host removal mid-game: eliminates the player (their role/history stays intact for

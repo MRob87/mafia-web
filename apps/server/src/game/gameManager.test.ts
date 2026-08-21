@@ -135,6 +135,51 @@ describe('advancePhase', () => {
   });
 });
 
+describe('setTheme', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('re-skins a running game: new theme, re-rolled setting/titles, engine state untouched', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room);
+    const before = { phase: game.phase, players: { ...game.players } };
+
+    gameManager.setTheme(room.roomCode, 'alien');
+
+    expect(game.theme).toBe('alien');
+    expect(game.villageName.length).toBeGreaterThan(0);
+    // Titles re-rolled for the new theme: still one unique title per player.
+    expect(Object.keys(game.characterTitles).sort()).toEqual(Object.keys(game.players).sort());
+    expect(new Set(Object.values(game.characterTitles)).size).toBe(5);
+    // Engine state untouched — same phase, same roles, everyone still alive.
+    expect(game.phase).toBe(before.phase);
+    expect(game.players).toEqual(before.players);
+    // A public beat marks the scene change.
+    expect(game.eventLog).toContainEqual(
+      expect.objectContaining({
+        type: 'system',
+        payload: expect.objectContaining({
+          message: expect.stringContaining('The scene changes'),
+        }),
+      })
+    );
+
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('is a no-op when the theme is unchanged', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room);
+    const villageBefore = game.villageName;
+    const eventsBefore = game.eventLog.length;
+
+    gameManager.setTheme(room.roomCode, 'mafia'); // already mafia
+    expect(game.villageName).toBe(villageBefore);
+    expect(game.eventLog).toHaveLength(eventsBefore);
+
+    gameManager.endGame(room.roomCode);
+  });
+});
+
 describe('extendPhase', () => {
   afterEach(() => vi.useRealTimers());
 

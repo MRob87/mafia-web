@@ -252,6 +252,16 @@ export function finalizeRoleConfig(room: Room): RoleConfig {
   return config;
 }
 
+/** Host theme switch (validated): updates the room's skin. Returns the room, or null if the
+ *  room doesn't exist or the theme is unknown. Caller also updates any running game. */
+export function setRoomTheme(roomCode: string, theme: ThemeId): Room | null {
+  const room = rooms.get(roomCode);
+  if (!room) return null;
+  if (theme !== 'mafia' && theme !== 'werewolf' && theme !== 'space' && theme !== 'alien') return null;
+  room.theme = theme;
+  return room;
+}
+
 export function markRoomInProgress(roomCode: string): void {
   const room = rooms.get(roomCode);
   if (room) room.status = 'in_progress';
