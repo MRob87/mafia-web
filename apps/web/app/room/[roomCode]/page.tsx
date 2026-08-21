@@ -448,7 +448,17 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     Day {view.dayNumber} — {PHASE_LABELS[view.phase] ?? view.phase}
                   </span>
                   {remainingSeconds !== null && (
-                    <span className={`text-sm font-normal ${remainingSeconds <= 5 ? 'text-rose-400' : 'text-sky-300'}`}>
+                    <span
+                      className={`inline-block text-sm font-normal ${
+                        remainingSeconds <= 5 ? 'text-rose-400' : 'text-sky-300'
+                      } ${
+                        remainingSeconds <= 5
+                          ? 'timer-shake-intense'
+                          : remainingSeconds <= 10
+                            ? 'timer-shake-mild'
+                            : ''
+                      }`}
+                    >
                       ⏱ {formatRemaining(remainingSeconds)}
                     </span>
                   )}

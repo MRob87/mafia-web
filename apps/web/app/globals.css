@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+/* Countdown urgency: the timer trembles mildly in the final 10s and hard in the final 5s. */
+@keyframes timer-shake-mild {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-1px) rotate(-1deg); }
+  75% { transform: translateX(1px) rotate(1deg); }
+}
+@keyframes timer-shake-intense {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20% { transform: translateX(-3px) rotate(-4deg); }
+  40% { transform: translateX(3px) rotate(4deg); }
+  60% { transform: translateX(-3px) rotate(-3deg); }
+  80% { transform: translateX(2px) rotate(2deg); }
+}
+.timer-shake-mild {
+  display: inline-block;
+  animation: timer-shake-mild 0.6s ease-in-out infinite;
+}
+.timer-shake-intense {
+  display: inline-block;
+  animation: timer-shake-intense 0.32s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .timer-shake-mild,
+  .timer-shake-intense { animation: none; }
+}
