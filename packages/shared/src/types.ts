@@ -8,7 +8,7 @@ export const NO_VOTE_TARGET = 'no-vote';
 
 /** Cosmetic skin chosen per room at creation. The engine and internal role ids never change
  *  ('mafia' is always the killer team) — only player-facing labels, emoji, and narration. */
-export type ThemeId = 'mafia' | 'werewolf' | 'space';
+export type ThemeId = 'mafia' | 'werewolf' | 'space' | 'alien';
 
 export type Phase =
   | 'lobby'

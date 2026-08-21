@@ -12,7 +12,7 @@ import {
   narrateEpilogue,
 } from './narrator.js';
 
-const THEMES: ThemeId[] = ['mafia', 'werewolf', 'space'];
+const THEMES: ThemeId[] = ['mafia', 'werewolf', 'space', 'alien'];
 
 describe('assignSetting', () => {
   it.each(THEMES)('assigns a %s setting and a unique title to every player', (theme) => {
@@ -60,6 +60,11 @@ describe('narration templates', () => {
       expect(space).toContain('the Saboteurs');
       expect(space).not.toContain('the Mafia');
       expect(space).not.toContain('Werewolves');
+
+      const alien = narrateEpilogue('alien', 'Outpost Test', 'mafia');
+      expect(alien).toContain('the Aliens');
+      expect(alien).not.toContain('the Mafia');
+      expect(alien).not.toContain('Saboteurs');
     }
   });
 

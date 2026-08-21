@@ -131,7 +131,7 @@ export default function HomePage() {
           <div className="mt-4 space-y-4">
             <div>
               <p className="text-sm text-slate-400">Game mode</p>
-              <div className="mt-1 grid grid-cols-3 gap-2">
+              <div className="mt-1 grid grid-cols-2 gap-2">
                 {THEME_OPTIONS.map((t) => (
                   <button
                     key={t.id}

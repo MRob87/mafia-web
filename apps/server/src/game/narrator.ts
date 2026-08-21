@@ -217,6 +217,85 @@ const NARRATOR_THEMES: Record<ThemeId, NarratorTheme> = {
       ],
     },
   },
+  alien: {
+    settingNames: [
+      'Outpost 13',
+      'Station Aurora',
+      'Icehold',
+      'Research Base Pelagia',
+      'The Vanguard',
+      'Whiteout Station',
+      'Outpost Calder',
+      'Station Nadir',
+      'Frostfall Base',
+      'The Terminus',
+      'Outpost Vigil',
+      'Blacksite Helix',
+    ],
+    predatorProse: 'the Aliens',
+    titles: [
+      'the Biologist',
+      'the Radio Operator',
+      'the Meteorologist',
+      'the Glaciologist',
+      'the Mechanic',
+      'the Cook',
+      'the Field Medic',
+      'the Surveyor',
+      'the Pilot',
+      'the Geophysicist',
+      'the Dog Handler',
+      'the Station Chief',
+      'the Electrician',
+      'the Archivist',
+      'the Welder',
+      'the Cartographer',
+    ],
+    fallbackTitle: 'one of the researchers',
+    templates: {
+      intro: [
+        'The storm has cut {setting} off from the world. Something came in from the ice — and now {predator} wear the faces of friends. Trust no one completely.',
+        'Blood tests inconclusive. Comms are down. Somewhere inside {setting}, {predator} are perfectly imitating the people you know.',
+        'Whatever thawed out in Lab 3 is loose in {setting}. {predator} could be anyone now — they remember everything the real ones knew.',
+      ],
+      nightKill: [
+        'In the night, something wearing a familiar face followed {victim} into the dark. By morning, only what was left of them says {predator} are still among us at {setting}.',
+        '{setting} wakes to a torn parka and a red trail on the ice. {victim} is gone — {predator} fed in the night.',
+        'The generator hiccuped at 3 a.m. When the lights returned to {setting}, {victim} was no longer human — and no longer anything at all.',
+        'A door left open to the storm. {victim} is found at the perimeter of {setting}, and what killed them left no footprints leading away.',
+      ],
+      peacefulNight: [
+        'The storm howls over {setting}, but morning head-count comes up even. Everyone is alive. Everyone *seems* to be themselves.',
+        'No one died in the night at {setting}. Somehow that makes the silence at breakfast worse.',
+        'The night passes over {setting} without a scream. {predator} are patient — that is the worst part.',
+      ],
+      lynch: [
+        'The crew of {setting} corners {victim} in the rec room. Whatever they really were, the flamethrower leaves nothing to test.',
+        'By vote of the survivors, {victim} is forced out into the whiteout. {setting} bars the door and tries not to listen.',
+        '{victim} swears they are still human, right up until the end. {setting} could not afford to believe them.',
+      ],
+      noMajority: [
+        'Accusations fly across the mess hall of {setting}, but no majority forms. Everyone keeps one hand near a weapon.',
+        'The survivors of {setting} cannot agree who is still human. The vote collapses; the paranoia does not.',
+      ],
+      noVotes: [
+        'No one at {setting} dares make an accusation today. Eyes down, doors locked. {predator} must be pleased.',
+        'The blood-test kits sit unused. Not one accusation is voiced at {setting} — fear has won the day.',
+      ],
+      noLynch: [
+        'The survivors of {setting} stay their hand. No one burns today — a mercy, or a fatal mistake.',
+        '{setting} votes to trust, just this once. The night will grade that decision.',
+      ],
+      epilogueTown: [
+        'The last imitation shrieks and dies, and the survivors of {setting} stand alone — truly alone — at last. The humans have won.',
+        'Every one of {predator} unmasked and destroyed. When the rescue plane reaches {setting}, there is someone left to save.',
+      ],
+      epiloguePredator: [
+        'The storm clears over {setting}, and everything that walks out is wearing a borrowed face. {predator} have won.',
+        'The rescue team will find {setting} calm, friendly, and eager to leave the ice. {predator} have won; the world just doesn\'t know it yet.',
+      ],
+    },
+  },
 };
 
 function pick<T>(pool: T[]): T {

@@ -43,10 +43,19 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     id: 'space',
     name: 'Space Station',
     roleLabels: { mafia: 'Saboteur', doctor: 'Medic', detective: 'Security Officer', villager: 'Crewmate' },
-    roleEmoji: { mafia: '👾', doctor: '💉', detective: '🛡️', villager: '🧑‍🚀' },
+    roleEmoji: { mafia: '🛠️', doctor: '💉', detective: '🛡️', villager: '🧑‍🚀' },
     killerChatLabel: 'Saboteur Comms',
     killerTeam: 'Saboteurs',
     townTeam: 'Crew',
+  },
+  alien: {
+    id: 'alien',
+    name: 'Alien',
+    roleLabels: { mafia: 'Alien', doctor: 'Field Medic', detective: 'Scientist', villager: 'Researcher' },
+    roleEmoji: { mafia: '👽', doctor: '🩹', detective: '🔬', villager: '🧑‍🔬' },
+    killerChatLabel: 'The Hive',
+    killerTeam: 'Aliens',
+    townTeam: 'Humans',
   },
 };
 

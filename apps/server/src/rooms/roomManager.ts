@@ -120,8 +120,9 @@ export function createRoom(
     // keeps the historical behavior (roles hidden until game end) unless the host opts in.
     // Defaults ON: only an explicit `false` keeps roles hidden until the game ends.
     revealRolesOnDeath: revealRolesOnDeathInput !== false,
-    // Only a known theme is accepted; anything else falls back to the classic Mafia skin.
-    theme: themeInput === 'werewolf' || themeInput === 'space' ? themeInput : 'mafia',
+    // Only a known theme is accepted; anything else falls back to the default Mafia skin.
+    theme:
+      themeInput === 'werewolf' || themeInput === 'space' || themeInput === 'alien' ? themeInput : 'mafia',
     createdAt: nowIso(),
   };
 
