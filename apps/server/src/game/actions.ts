@@ -93,30 +93,45 @@ export function resolveNightActions(game: GameInstance): void {
 
 export function resolveDayVote(game: GameInstance): void {
   const votes = Object.values(game.dayVotes);
-  // Most votes wins; a tie eliminates no one. The "no lynch" option participates in the tally
-  // like any candidate, so it can out-vote a player to prevent a lynch — but it's never a person,
-  // so winning it simply means no elimination.
-  const winner = pluralityTarget(votes);
+  const counts = new Map<string, number>();
+  for (const target of votes) counts.set(target, (counts.get(target) ?? 0) + 1);
 
-  if (winner && winner !== NO_VOTE_TARGET && game.players[winner]?.isAlive) {
-    game.players[winner].isAlive = false;
-    game.lastEliminatedId = winner;
+  // Majority-required lynch: a living player is eliminated only if STRICTLY MORE THAN HALF of the
+  // living voted for them (floor(alive/2)+1). Because that threshold is a true majority, at most
+  // one target can ever reach it, so there's never ambiguity or a tie to break. A tie, a mere
+  // plurality that falls short, an empty vote, or the "no lynch" option reaching majority all mean
+  // no one dies. (The Mafia's night kill stays plurality — that's a separate resolution.)
+  const aliveCount = Object.values(game.players).filter((p) => p.isAlive).length;
+  const majority = Math.floor(aliveCount / 2) + 1;
+
+  let eliminated: string | null = null;
+  for (const [target, count] of counts) {
+    if (target !== NO_VOTE_TARGET && count >= majority && game.players[target]?.isAlive) {
+      eliminated = target;
+      break;
+    }
+  }
+
+  if (eliminated) {
+    game.players[eliminated].isAlive = false;
+    game.lastEliminatedId = eliminated;
     const event: GameEvent = {
       type: 'death',
       visibility: 'public',
-      payload: { targetId: winner, cause: 'vote' },
+      payload: { targetId: eliminated, cause: 'vote' },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     };
     game.eventLog.push(event);
   } else {
     game.lastEliminatedId = null;
+    const noVoteReachedMajority = (counts.get(NO_VOTE_TARGET) ?? 0) >= majority;
     const message =
       votes.length === 0
         ? 'No votes were cast.'
-        : winner === NO_VOTE_TARGET
+        : noVoteReachedMajority
           ? 'The town voted not to eliminate anyone.'
-          : 'The vote was tied — no one was eliminated.';
+          : 'No majority was reached — no one was eliminated.';
     game.eventLog.push({
       type: 'system',
       visibility: 'public',

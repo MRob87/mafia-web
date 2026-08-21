@@ -111,7 +111,8 @@ describe('resolveNightActions', () => {
 });
 
 describe('resolveDayVote', () => {
-  it('eliminates the plurality vote target and sets lastEliminatedId', () => {
+  it('eliminates a player who reaches a majority of the living', () => {
+    // 3 alive, majority is 2; c gets both other votes.
     const game = makeGame([player('a', 'villager'), player('b', 'villager'), player('c', 'mafia')], {
       dayVotes: { a: 'c', b: 'c' },
     });
@@ -131,9 +132,9 @@ describe('resolveDayVote', () => {
     expect(game.lastEliminatedId).toBeNull();
   });
 
-  it('eliminates no one when the No-vote option wins the plurality', () => {
+  it('eliminates no one when the No-vote option reaches a majority', () => {
+    // 3 alive, majority is 2; the two no-votes are themselves a majority for no lynch.
     const game = makeGame([player('a', 'villager'), player('b', 'villager'), player('c', 'mafia')], {
-      // Two no-votes out-vote the single vote against c.
       dayVotes: { a: NO_VOTE_TARGET, b: NO_VOTE_TARGET, c: 'a' },
     });
     resolveDayVote(game);
@@ -147,11 +148,28 @@ describe('resolveDayVote', () => {
     );
   });
 
-  it('eliminates a plurality target even without an outright majority', () => {
-    // 2 for c, 1 for a, 1 no-vote — c has a plurality but not a majority of 4; still lynched.
+  it('does NOT eliminate a plurality leader that falls short of a majority', () => {
+    // 4 alive, majority is 3. c leads with 2 votes but that's only a plurality — no lynch.
     const game = makeGame(
       [player('a', 'villager'), player('b', 'villager'), player('c', 'mafia'), player('d', 'villager')],
       { dayVotes: { a: 'c', b: 'c', c: 'a', d: NO_VOTE_TARGET } }
+    );
+    resolveDayVote(game);
+    expect(game.players.c.isAlive).toBe(true);
+    expect(game.lastEliminatedId).toBeNull();
+    expect(game.eventLog).toContainEqual(
+      expect.objectContaining({
+        type: 'system',
+        payload: expect.objectContaining({ message: 'No majority was reached — no one was eliminated.' }),
+      })
+    );
+  });
+
+  it('eliminates once a target crosses the majority threshold', () => {
+    // 4 alive, majority is 3. Three of the four vote for c.
+    const game = makeGame(
+      [player('a', 'villager'), player('b', 'villager'), player('c', 'mafia'), player('d', 'villager')],
+      { dayVotes: { a: 'c', b: 'c', d: 'c', c: 'a' } }
     );
     resolveDayVote(game);
     expect(game.players.c.isAlive).toBe(false);
