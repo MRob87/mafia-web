@@ -21,6 +21,7 @@ function makeGame(players: PlayerGameState[], overrides: Partial<GameInstance> =
     winner: null,
     nightDurationMs: 30_000,
     revealRolesOnDeath: false,
+    theme: 'mafia',
     villageName: 'Testburg',
     characterTitles: {},
     doctorLastTarget: {},

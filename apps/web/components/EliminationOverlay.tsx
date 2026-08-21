@@ -1,8 +1,10 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Role } from '@mafia/shared';
 import { Avatar } from './Avatar';
-import { ROLE_COLORS, ROLE_EMOJI } from '../lib/roleTheme';
+import { ROLE_COLORS } from '../lib/roleTheme';
+import { useTheme } from '../lib/theme';
 
 export interface EliminationInfo {
   userId: string;
@@ -12,6 +14,7 @@ export interface EliminationInfo {
 }
 
 export function EliminationOverlay({ info, onDismiss }: { info: EliminationInfo | null; onDismiss: () => void }) {
+  const theme = useTheme();
   return (
     <AnimatePresence>
       {info && (
@@ -41,8 +44,8 @@ export function EliminationOverlay({ info, onDismiss }: { info: EliminationInfo 
                 className="mt-2 rounded-xl border border-slate-700 bg-slate-900 px-6 py-3"
               >
                 <p className="text-xs text-slate-400">They were the</p>
-                <p className={`text-xl font-bold capitalize ${ROLE_COLORS[info.role] ?? 'text-slate-100'}`}>
-                  {ROLE_EMOJI[info.role] ?? ''} {info.role}
+                <p className={`text-xl font-bold ${ROLE_COLORS[info.role] ?? 'text-slate-100'}`}>
+                  {theme.roleEmoji[info.role as Role] ?? ''} {theme.roleLabels[info.role as Role] ?? info.role}
                 </p>
               </motion.div>
             )}

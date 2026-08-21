@@ -1,21 +1,27 @@
+'use client';
+
+import { useTheme } from '../lib/theme';
+
 export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOpen?: boolean; title?: string }) {
+  const theme = useTheme();
+  const killers = theme.killerTeam;
   return (
     <details open={defaultOpen} className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
       <summary className="cursor-pointer select-none font-semibold text-slate-100">{title}</summary>
       <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-300">
         <p>
-          <strong className="text-slate-100">Objective:</strong> Villagers (every non-Mafia role) win by voting out
-          every Mafia member before they're outnumbered. Mafia win the moment they equal or outnumber everyone left
-          alive.
+          <strong className="text-slate-100">Objective:</strong> Villagers (every non-{theme.roleLabels.mafia} role)
+          win by rooting out every {theme.roleLabels.mafia} before they&apos;re outnumbered. The {killers} win the
+          moment they equal or outnumber everyone left alive.
         </p>
 
         <div>
           <p className="font-semibold text-slate-100">How a round works:</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
             <li>
-              <strong className="text-slate-100">Night</strong> — Mafia secretly agree on someone to eliminate, the
-              Doctor secretly protects someone, and the Detective secretly investigates someone. Villagers have no
-              action and simply wait.
+              <strong className="text-slate-100">Night</strong> — the {killers} secretly agree on someone to eliminate,
+              the {theme.roleLabels.doctor} secretly protects someone, and the {theme.roleLabels.detective} secretly
+              investigates someone. Villagers have no action and simply wait.
             </li>
             <li>
               <strong className="text-slate-100">Night Results</strong> — a short pause where everyone learns what
@@ -26,14 +32,14 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
               suspect.
             </li>
             <li>
-              <strong className="text-slate-100">Day — Voting</strong> — everyone votes for who to eliminate, or
-              picks <em>No vote</em> for no lynch. A player is eliminated <strong>only if they reach a majority</strong>{' '}
-              of the living; a tie, a plurality that falls short, or <em>No vote</em> all mean no one is eliminated.
-              Live tally marks show who is voting for whom, and a target that reaches a majority glows red.
+              <strong className="text-slate-100">Day — Voting</strong> — everyone votes for who to eliminate, or picks{' '}
+              <em>No vote</em> for no lynch. A player is eliminated <strong>only if they reach a majority</strong> of
+              the living; a tie, a plurality that falls short, or <em>No vote</em> all mean no one is eliminated. Live
+              tally marks show who is voting for whom, and a target that reaches a majority glows red.
             </li>
             <li>
-              <strong className="text-slate-100">Elimination</strong> — whoever was voted out gets a short window
-              for last words before the next night begins.
+              <strong className="text-slate-100">Elimination</strong> — whoever was voted out gets a short window for
+              last words before the next night begins.
             </li>
           </ul>
           <p className="mt-1 text-slate-400">
@@ -46,20 +52,30 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
           <p className="font-semibold text-slate-100">Roles:</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
             <li>
-              <strong className="text-rose-400">🔪 Mafia</strong> — Each night, agree on a player to eliminate. You
-              know who your fellow Mafia are and have a private Mafia Chat to coordinate.
+              <strong className="text-rose-400">
+                {theme.roleEmoji.mafia} {theme.roleLabels.mafia}
+              </strong>{' '}
+              — Each night, agree on a player to eliminate. You know who your fellow {killers} are and share a private{' '}
+              {theme.killerChatLabel} to coordinate.
             </li>
             <li>
-              <strong className="text-emerald-400">🩺 Doctor</strong> — Each night, choose a player to protect from
-              the Mafia's kill. You may protect yourself, but not the same player two nights in a row.
+              <strong className="text-emerald-400">
+                {theme.roleEmoji.doctor} {theme.roleLabels.doctor}
+              </strong>{' '}
+              — Each night, choose a player to protect from the kill. You may protect yourself, but not the same player
+              two nights in a row.
             </li>
             <li>
-              <strong className="text-sky-400">🔍 Detective</strong> — Each night, investigate a player to privately
-              learn whether they're Mafia.
+              <strong className="text-sky-400">
+                {theme.roleEmoji.detective} {theme.roleLabels.detective}
+              </strong>{' '}
+              — Each night, investigate a player to privately learn whether they&apos;re one of the {killers}.
             </li>
             <li>
-              <strong className="text-slate-300">🧑 Villager</strong> — No special ability. Discussion and voting
-              are your only tools.
+              <strong className="text-slate-300">
+                {theme.roleEmoji.villager} {theme.roleLabels.villager}
+              </strong>{' '}
+              — No special ability. Discussion and voting are your only tools.
             </li>
           </ul>
         </div>
@@ -70,15 +86,18 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
             <li>
               Never state your role out loud in Public Chat — announcing it removes the deduction from the game.
             </li>
-            <li>Mafia Chat is private for a reason. Nothing discussed there should ever be repeated in Public Chat.</li>
             <li>
-              The Detective's results are only ever shown to the Detective — sharing them (truthfully, or as a
-              bluff) is a real strategic choice, since no one else can verify it.
+              {theme.killerChatLabel} is private for a reason. Nothing discussed there should ever be repeated in Public
+              Chat.
             </li>
             <li>
-              When you're eliminated, your role is revealed to everyone by default (the host can turn this off at
-              room creation). You can keep watching, but let the living run the discussion — don't give away anything
-              else you saw or suspected.
+              The {theme.roleLabels.detective}&apos;s results are only ever shown to the {theme.roleLabels.detective} —
+              sharing them (truthfully, or as a bluff) is a real strategic choice, since no one else can verify it.
+            </li>
+            <li>
+              When you&apos;re eliminated, your role is revealed to everyone by default (the host can turn this off at
+              room creation). You can keep watching, but let the living run the discussion — don&apos;t give away
+              anything else you saw or suspected.
             </li>
           </ul>
         </div>

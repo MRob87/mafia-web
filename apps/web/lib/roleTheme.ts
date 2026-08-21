@@ -13,9 +13,4 @@ export const ROLE_HEX: Record<string, string> = {
   villager: '#cbd5e1',
 };
 
-export const ROLE_EMOJI: Record<string, string> = {
-  mafia: '🔪',
-  doctor: '🩺',
-  detective: '🔍',
-  villager: '🧑',
-};
+// Role emoji moved into the per-room theme (see lib/theme). Colors stay shared across themes.

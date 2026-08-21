@@ -8,20 +8,48 @@
  * these strings ride alongside as an optional `narration` the client prefers when present.
  */
 
-const VILLAGE_NAMES = [
-  'Ravenhollow',
-  'Blackmoor',
-  'Ashford',
-  'Grimwald',
-  'Duskwood',
-  'Thornfield',
-  'Mistvale',
-  'Hollowbrook',
-  'Crowsreach',
-  'Fenwick',
-  'Marrowgate',
-  'Gallowsend',
-];
+import type { ThemeId } from '@mafia/shared';
+
+/** Per-theme flavor: where the story is set and what the killers are called. The internal role
+ *  ids never change — only these words do. */
+const NARRATOR_THEMES: Record<ThemeId, { villageNames: string[]; predatorPlural: string; predatorProse: string }> = {
+  mafia: {
+    villageNames: [
+      'Ravenhollow',
+      'Blackmoor',
+      'Ashford',
+      'Grimwald',
+      'Duskwood',
+      'Thornfield',
+      'Mistvale',
+      'Hollowbrook',
+      'Crowsreach',
+      'Fenwick',
+      'Marrowgate',
+      'Gallowsend',
+    ],
+    predatorPlural: 'Mafia',
+    predatorProse: 'the Mafia',
+  },
+  werewolf: {
+    villageNames: [
+      'Wolfsbane Hollow',
+      'Moonvale',
+      'Grimfang',
+      'Dire Hollow',
+      'Nightwood',
+      'Silverpine',
+      'Bloodmoon Vale',
+      'Fell Thicket',
+      'Howlbrook',
+      'Ashen Wood',
+      'Gravewood',
+      'Mistfang',
+    ],
+    predatorPlural: 'Werewolves',
+    predatorProse: 'the Werewolves',
+  },
+};
 
 // At least one per seat in a full 12-player room, so titles never need to repeat.
 const CHARACTER_TITLES = [
@@ -62,12 +90,12 @@ function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (_, key) => String(vars[key] ?? ''));
 }
 
-/** Picks a village name and assigns each player a unique character title, in random order. */
-export function assignSetting(playerIds: string[]): {
-  villageName: string;
-  characterTitles: Record<string, string>;
-} {
-  const villageName = pick(VILLAGE_NAMES);
+/** Picks a themed village name and assigns each player a unique character title, in random order. */
+export function assignSetting(
+  playerIds: string[],
+  theme: ThemeId
+): { villageName: string; characterTitles: Record<string, string> } {
+  const villageName = pick(NARRATOR_THEMES[theme].villageNames);
   const titles = shuffle(CHARACTER_TITLES);
   const characterTitles: Record<string, string> = {};
   playerIds.forEach((id, i) => {
@@ -76,31 +104,33 @@ export function assignSetting(playerIds: string[]): {
   return { villageName, characterTitles };
 }
 
-export function narrateIntro(villageName: string, mafiaCount: number): string {
-  const killers = mafiaCount === 1 ? 'a single killer hides' : `${mafiaCount} killers hide`;
+export function narrateIntro(theme: ThemeId, villageName: string): string {
+  const predator = NARRATOR_THEMES[theme].predatorProse;
   return fill(pick([
-    'Night has come and gone over {village}, and already the air is wrong. Among its people, {killers} — wearing familiar faces. Find them before they find you.',
-    'Welcome to {village}, where {killers} among the townsfolk. Trust is the only weapon you have, and the only one they will use against you.',
-    'The bells of {village} toll uneasily. {killers} in plain sight, and no one yet knows their names.',
-  ]), { village: villageName, killers });
+    'Night has come and gone over {village}, and already the air is wrong. Somewhere among its people, {predator} hide — wearing familiar faces. Find them before they find you.',
+    'Welcome to {village}. {predator} walk among the townsfolk, and trust is the only weapon you have — the same one they will use against you.',
+    'The bells of {village} toll uneasily. {predator} move in plain sight, and no one yet knows their names.',
+  ]), { village: villageName, predator });
 }
 
-export function narrateNightKill(villageName: string, victimTitle: string): string {
+export function narrateNightKill(theme: ThemeId, villageName: string, victimTitle: string): string {
   const victim = victimTitle || FALLBACK_TITLE;
+  const predator = NARRATOR_THEMES[theme].predatorProse;
   return fill(pick([
-    'As dawn breaks over {village}, {victim} is found cold and still. The Mafia struck in the dark.',
-    '{village} wakes to grief: {victim} lies lifeless in the square, a silent blade the only witness.',
+    'As dawn breaks over {village}, {victim} is found cold and still. {predator} struck in the dark.',
+    '{village} wakes to grief: {victim} lies lifeless in the square, and {predator} leave no witness.',
     'A scream in the night, then silence. By morning, {victim} is gone from {village}.',
-    'The Mafia moved unseen. {victim} did not live to see the sun rise over {village}.',
-  ]), { village: villageName, victim });
+    '{predator} moved unseen. {victim} did not live to see the sun rise over {village}.',
+  ]), { village: villageName, victim, predator });
 }
 
-export function narratePeacefulNight(villageName: string): string {
+export function narratePeacefulNight(theme: ThemeId, villageName: string): string {
+  const predator = NARRATOR_THEMES[theme].predatorProse;
   return fill(pick([
     'The night passed over {village} without blood. Everyone rises to greet an uneasy morning.',
-    'Dawn comes quietly to {village} — no one was lost in the dark. But the Mafia are still out there.',
+    'Dawn comes quietly to {village} — no one was lost in the dark. But {predator} are still out there.',
     'For once the streets of {village} are empty of the dead. The night spared everyone… this time.',
-  ]), { village: villageName });
+  ]), { village: villageName, predator });
 }
 
 export function narrateLynch(villageName: string, victimTitle: string): string {
@@ -119,11 +149,12 @@ export function narrateNoMajority(villageName: string): string {
   ]), { village: villageName });
 }
 
-export function narrateNoVotes(villageName: string): string {
+export function narrateNoVotes(theme: ThemeId, villageName: string): string {
+  const predator = NARRATOR_THEMES[theme].predatorProse;
   return fill(pick([
     '{village} stands silent. Not a single accusation is cast, and the day ends in unease.',
-    'No one in {village} dares point a finger today. The Mafia must be pleased.',
-  ]), { village: villageName });
+    'No one in {village} dares point a finger today. {predator} must be pleased.',
+  ]), { village: villageName, predator });
 }
 
 export function narrateNoLynch(villageName: string): string {
@@ -133,14 +164,15 @@ export function narrateNoLynch(villageName: string): string {
   ]), { village: villageName });
 }
 
-export function narrateEpilogue(villageName: string, winner: 'mafia' | 'villagers'): string {
+export function narrateEpilogue(theme: ThemeId, villageName: string, winner: 'mafia' | 'villagers'): string {
+  const predator = NARRATOR_THEMES[theme].predatorProse;
   return winner === 'villagers'
     ? fill(pick([
-        'The last of the Mafia falls, and {village} breathes free at last. The townsfolk have won.',
-        'Dawn breaks clean over {village} — every killer rooted out. The town endures.',
-      ]), { village: villageName })
+        'The last of {predator} falls, and {village} breathes free at last. The townsfolk have won.',
+        'Dawn breaks clean over {village} — every last hunter rooted out. The town endures.',
+      ]), { village: villageName, predator })
     : fill(pick([
-        'Shadows swallow {village}. The Mafia now equal the living — the town is theirs.',
-        'The lights of {village} go out one by one. The Mafia have won; nothing remains to save.',
-      ]), { village: villageName });
+        'Shadows swallow {village}. {predator} now equal the living — the town is theirs.',
+        'The lights of {village} go out one by one. {predator} have won; nothing remains to save.',
+      ]), { village: villageName, predator });
 }

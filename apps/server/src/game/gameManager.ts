@@ -35,7 +35,7 @@ function clearTimer(roomCode: string): void {
 
 export function startGame(room: Room): GameInstance {
   const roleAssignment: Record<string, Role> = assignRoles(room.playerIds, room.roleConfig);
-  const { villageName, characterTitles } = assignSetting(room.playerIds);
+  const { villageName, characterTitles } = assignSetting(room.playerIds, room.theme);
 
   const game: GameInstance = {
     roomCode: room.roomCode,
@@ -55,17 +55,17 @@ export function startGame(room: Room): GameInstance {
     winner: null,
     nightDurationMs: room.nightDurationSeconds * 1000,
     revealRolesOnDeath: room.revealRolesOnDeath,
+    theme: room.theme,
     villageName,
     characterTitles,
     doctorLastTarget: {},
     lastEliminatedId: null,
   };
 
-  const mafiaCount = Object.values(game.players).filter((p) => p.role === 'mafia').length;
   game.eventLog.push({
     type: 'system',
     visibility: 'public',
-    payload: { message: `The game begins in ${villageName}.`, narration: narrateIntro(villageName, mafiaCount) },
+    payload: { message: `The game begins in ${villageName}.`, narration: narrateIntro(room.theme, villageName) },
     timestamp: new Date().toISOString(),
     dayNumber: game.dayNumber,
   });
@@ -84,7 +84,7 @@ function pushEpilogue(game: GameInstance, winner: 'mafia' | 'villagers'): void {
     visibility: 'public',
     payload: {
       message: winner === 'villagers' ? 'The villagers win.' : 'The Mafia win.',
-      narration: narrateEpilogue(game.villageName, winner),
+      narration: narrateEpilogue(game.theme, game.villageName, winner),
     },
     timestamp: new Date().toISOString(),
     dayNumber: game.dayNumber,

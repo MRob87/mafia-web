@@ -13,9 +13,10 @@ import { EliminationOverlay, type EliminationInfo } from '../../../components/El
 import { WinScreen } from '../../../components/WinScreen';
 import { PhaseTransitionBanner } from '../../../components/PhaseTransitionBanner';
 import { ToastStack, type ToastMessage } from '../../../components/Toast';
-import { ROLE_COLORS, ROLE_EMOJI } from '../../../lib/roleTheme';
+import { ROLE_COLORS } from '../../../lib/roleTheme';
+import { getTheme, ThemeProvider } from '../../../lib/theme';
 import { NO_VOTE_TARGET } from '@mafia/shared';
-import type { GameEvent, PlayerView, Room } from '@mafia/shared';
+import type { GameEvent, PlayerView, Role, Room } from '@mafia/shared';
 
 const ACTING_ROLES = new Set(['mafia', 'doctor', 'detective']);
 
@@ -77,13 +78,14 @@ function describeEvent(event: GameEvent, nameById: Map<string, string>): string 
 }
 
 /** What a player should be doing right now, phase by phase. */
-function roleInstructions(phase: string, role: string, isAlive: boolean): string | null {
+function roleInstructions(phase: string, role: string, isAlive: boolean, killerTeam: string): string | null {
   if (!isAlive) return null;
   if (phase === 'night') {
-    if (role === 'mafia') return 'Choose a player to eliminate. Coordinate with your fellow Mafia below.';
+    if (role === 'mafia') return `Choose a player to eliminate. Coordinate with your fellow ${killerTeam} below.`;
     if (role === 'doctor')
       return "Choose a player to protect from tonight's Mafia attack — you may protect yourself, but not the same player two nights in a row.";
-    if (role === 'detective') return "Choose a player to investigate — you'll learn whether they're Mafia.";
+    if (role === 'detective')
+      return `Choose a player to investigate — you'll learn whether they're one of the ${killerTeam}.`;
     return 'You have no night action. Sit tight until morning.';
   }
   if (phase === 'day_discussion') return 'Discuss with the group who you suspect is Mafia. Voting opens next.';
@@ -339,6 +341,8 @@ function RoomView({ roomCode }: { roomCode: string }) {
   // Stable roster order for unique avatar colors: the in-game player list once a game is running
   // (fixed for the whole game), otherwise the lobby roster. Same order for every client.
   const avatarOrderIds = view ? view.players.map((p) => p.userId) : room?.playerIds ?? [];
+  // The room's cosmetic skin (Mafia vs Werewolf): drives role labels, emoji, chat name, etc.
+  const theme = getTheme(view?.theme ?? room?.theme);
   const investigatedById = new Map((view?.investigationHistory ?? []).map((r) => [r.targetId, r.isMafia]));
 
   // Voting progress: during day_voting, how many of the living have cast a vote (each votes once;
@@ -414,6 +418,7 @@ function RoomView({ roomCode }: { roomCode: string }) {
   }
 
   return (
+    <ThemeProvider theme={theme}>
     <AvatarColorProvider orderedIds={avatarOrderIds}>
     <main
       className={`min-h-screen bg-gradient-to-b ${background} px-4 pt-6 pb-40 transition-colors duration-1000 sm:px-6 sm:pt-10 sm:pb-10`}
@@ -534,12 +539,12 @@ function RoomView({ roomCode }: { roomCode: string }) {
                 <p className="mt-3 text-sm">
                   Your role:{' '}
                   <span className={`font-semibold ${ROLE_COLORS[view.self.role] ?? 'text-slate-200'}`}>
-                    {ROLE_EMOJI[view.self.role] ?? ''} {view.self.role}
+                    {theme.roleEmoji[view.self.role] ?? ''} {theme.roleLabels[view.self.role] ?? view.self.role}
                   </span>
                 </p>
-                {roleInstructions(view.phase, view.self.role, view.self.isAlive) && (
+                {roleInstructions(view.phase, view.self.role, view.self.isAlive, theme.killerTeam) && (
                   <p className="mt-1 text-sm text-slate-400">
-                    {roleInstructions(view.phase, view.self.role, view.self.isAlive)}
+                    {roleInstructions(view.phase, view.self.role, view.self.isAlive, theme.killerTeam)}
                   </p>
                 )}
                 {view.phase === 'day_voting' && (
@@ -645,7 +650,7 @@ function RoomView({ roomCode }: { roomCode: string }) {
                         </p>
                         {p.revealedRole && (
                           <p className={`text-[10px] font-semibold ${ROLE_COLORS[p.revealedRole] ?? 'text-slate-400'}`}>
-                            {ROLE_EMOJI[p.revealedRole] ?? ''} {p.revealedRole}
+                            {theme.roleEmoji[p.revealedRole] ?? ''} {theme.roleLabels[p.revealedRole] ?? p.revealedRole}
                           </p>
                         )}
 
@@ -749,11 +754,14 @@ function RoomView({ roomCode }: { roomCode: string }) {
 
               {view.self.role === 'mafia' && view.self.isAlive && (
                 <section className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-4">
-                  <h3 className="font-semibold text-rose-300">🔪 Mafia Chat</h3>
+                  <h3 className="font-semibold text-rose-300">
+                    {theme.roleEmoji.mafia} {theme.killerChatLabel}
+                  </h3>
                   <p className="mt-1 text-xs text-rose-200/70">
-                    This is a closed discussion — only fellow Mafia can see it. Your goal: agree on a target each
-                    night and eliminate Villagers, the Doctor, and the Detective until the Mafia equal or outnumber
-                    everyone left alive.
+                    This is a closed discussion — only fellow {theme.killerTeam} can see it. Your goal: agree on a
+                    target each night and pick off the {theme.roleLabels.villager}s, the {theme.roleLabels.doctor}, and
+                    the {theme.roleLabels.detective} until the {theme.killerTeam} equal or outnumber everyone left
+                    alive.
                   </p>
 
                   <p className="mt-2 text-xs text-rose-200/60">
@@ -847,6 +855,7 @@ function RoomView({ roomCode }: { roomCode: string }) {
       </div>
     </main>
     </AvatarColorProvider>
+    </ThemeProvider>
   );
 }
 

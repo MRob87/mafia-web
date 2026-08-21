@@ -74,6 +74,7 @@ export function buildPlayerView(game: GameInstance, userId: string, isHost = fal
 
   return {
     roomCode: game.roomCode,
+    theme: game.theme,
     villageName: game.villageName,
     phase: game.phase,
     phaseEndsAt: game.phaseEndsAt,

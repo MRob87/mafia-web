@@ -1,8 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import type { Role } from '@mafia/shared';
 import { Avatar } from './Avatar';
-import { ROLE_COLORS, ROLE_EMOJI } from '../lib/roleTheme';
+import { ROLE_COLORS } from '../lib/roleTheme';
+import { useTheme } from '../lib/theme';
 
 const CONFETTI_COLORS = ['#f43f5e', '#f59e0b', '#10b981', '#0ea5e9', '#8b5cf6', '#facc15'];
 const CONFETTI_PIECES = Array.from({ length: 36 }, (_, i) => ({
@@ -22,6 +24,7 @@ export function WinScreen({
   players: Array<{ userId: string; displayName: string; role: string | null }>;
   onDismiss: () => void;
 }) {
+  const theme = useTheme();
   return (
     <div
       className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center overflow-hidden bg-slate-950/95 p-6"
@@ -45,7 +48,9 @@ export function WinScreen({
         className="z-10 text-center"
       >
         <p className="text-4xl font-black tracking-tight text-amber-300">
-          {winner === 'mafia' ? '🔪 Mafia Win' : '🧑 Villagers Win'}
+          {winner === 'mafia'
+            ? `${theme.roleEmoji.mafia} ${theme.killerTeam} Win`
+            : `${theme.roleEmoji.villager} Villagers Win`}
         </p>
       </motion.div>
 
@@ -69,8 +74,8 @@ export function WinScreen({
                 <Avatar id={p.userId} name={p.displayName} size="lg" />
                 <p className="text-xs text-slate-300">{p.displayName}</p>
                 {p.role && (
-                  <p className={`text-[11px] font-semibold capitalize ${ROLE_COLORS[p.role] ?? 'text-slate-400'}`}>
-                    {ROLE_EMOJI[p.role] ?? ''} {p.role}
+                  <p className={`text-[11px] font-semibold ${ROLE_COLORS[p.role] ?? 'text-slate-400'}`}>
+                    {theme.roleEmoji[p.role as Role] ?? ''} {theme.roleLabels[p.role as Role] ?? p.role}
                   </p>
                 )}
               </motion.div>

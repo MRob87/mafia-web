@@ -6,6 +6,10 @@ export type Role = 'villager' | 'mafia' | 'doctor' | 'detective';
  *  collide with a real player and it naturally resolves to "eliminate no one". */
 export const NO_VOTE_TARGET = 'no-vote';
 
+/** Cosmetic skin chosen per room at creation. The engine and internal role ids never change
+ *  ('mafia' is always the killer team) — only player-facing labels, emoji, and narration. */
+export type ThemeId = 'mafia' | 'werewolf';
+
 export type Phase =
   | 'lobby'
   | 'role_assign'
@@ -46,6 +50,8 @@ export interface Room {
   players: Array<{ userId: string; displayName: string }>;
   /** How long the night phase lasts once the game starts. Set at room creation; default 30. */
   nightDurationSeconds: number;
+  /** Cosmetic skin for this room (labels/emoji/narration). Default 'mafia'. Set at creation. */
+  theme: ThemeId;
   /** Host option (default true): when true, an eliminated player's role is revealed to everyone
    *  the moment they die (classic tabletop "flip the card"). When false, roles stay hidden until
    *  the game ends. Set at room creation; locked into the GameInstance when the game starts. */
@@ -103,6 +109,8 @@ export interface GameInstance {
   nightDurationMs: number;
   /** Locked in from Room.revealRolesOnDeath when the game starts — see that field. */
   revealRolesOnDeath: boolean;
+  /** Locked in from Room.theme when the game starts — drives narration + client labels. */
+  theme: ThemeId;
   /** Themed setting for flavor narration, assigned at game start (see narrator.ts). */
   villageName: string;
   /** Each player's character title (userId -> e.g. "the Baker"), assigned at game start. Public
@@ -123,6 +131,8 @@ export interface GameInstance {
  */
 export interface PlayerView {
   roomCode: string;
+  /** Cosmetic skin for this game — the client resolves labels/emoji/name from it. */
+  theme: ThemeId;
   /** Themed setting for this game's flavor narration (see narrator.ts). '' before a game starts. */
   villageName: string;
   phase: Phase;

@@ -55,7 +55,7 @@ export function resolveNightActions(game: GameInstance): void {
       payload: {
         targetId: killTarget,
         cause: 'mafia',
-        narration: narrateNightKill(game.villageName, game.characterTitles[killTarget]),
+        narration: narrateNightKill(game.theme, game.villageName, game.characterTitles[killTarget]),
       },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
@@ -65,7 +65,7 @@ export function resolveNightActions(game: GameInstance): void {
     game.eventLog.push({
       type: 'system',
       visibility: 'public',
-      payload: { message: 'No one died during the night.', narration: narratePeacefulNight(game.villageName) },
+      payload: { message: 'No one died during the night.', narration: narratePeacefulNight(game.theme, game.villageName) },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     });
@@ -150,7 +150,7 @@ export function resolveDayVote(game: GameInstance): void {
           : 'No majority was reached — no one was eliminated.';
     const narration =
       votes.length === 0
-        ? narrateNoVotes(game.villageName)
+        ? narrateNoVotes(game.theme, game.villageName)
         : noVoteReachedMajority
           ? narrateNoLynch(game.villageName)
           : narrateNoMajority(game.villageName);

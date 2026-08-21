@@ -6,9 +6,11 @@ import { getSocket } from '../lib/socket';
 import { saveSession } from '../lib/session';
 import { Rules } from '../components/Rules';
 import { ToastStack, type ToastMessage } from '../components/Toast';
-import type { Room } from '@mafia/shared';
+import { getTheme, ThemeProvider, THEMES } from '../lib/theme';
+import type { Room, ThemeId } from '@mafia/shared';
 
 const NIGHT_DURATION_OPTIONS = [30, 60, 90, 120];
+const THEME_OPTIONS = Object.values(THEMES);
 
 export default function HomePage() {
   const router = useRouter();
@@ -16,6 +18,7 @@ export default function HomePage() {
   const [roomCode, setRoomCode] = useState('');
   const [nightDurationSeconds, setNightDurationSeconds] = useState(60);
   const [revealRolesOnDeath, setRevealRolesOnDeath] = useState(true);
+  const [theme, setTheme] = useState<ThemeId>('mafia');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [pending, setPending] = useState(false);
   const toastIdRef = useRef(0);
@@ -53,7 +56,7 @@ export default function HomePage() {
     setPending(true);
     getSocket().emit(
       'room:create',
-      { displayName, nightDurationSeconds, revealRolesOnDeath },
+      { displayName, nightDurationSeconds, revealRolesOnDeath, theme },
       (res) => {
         setPending(false);
         if (!res.ok) {
@@ -85,11 +88,13 @@ export default function HomePage() {
     <main className="mx-auto w-full max-w-md px-4 pt-10 pb-40 sm:pt-16 sm:pb-16">
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
-      <h1 className="text-3xl font-bold tracking-tight">Mafia</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{getTheme(theme).name}</h1>
       <p className="mt-1 text-sm text-slate-400">No account needed — just pick a name for this session.</p>
 
       <div className="mt-6">
-        <Rules defaultOpen title="How to play" />
+        <ThemeProvider theme={getTheme(theme)}>
+          <Rules defaultOpen title="How to play" />
+        </ThemeProvider>
       </div>
 
       <div className="mt-6 space-y-4">
@@ -124,6 +129,26 @@ export default function HomePage() {
             Create a new room
           </summary>
           <div className="mt-4 space-y-4">
+            <div>
+              <p className="text-sm text-slate-400">Game mode</p>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                {THEME_OPTIONS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTheme(t.id)}
+                    className={
+                      t.id === theme
+                        ? 'rounded-lg bg-indigo-600 py-3 text-sm font-semibold text-white'
+                        : 'rounded-lg border border-slate-700 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800'
+                    }
+                  >
+                    {t.roleEmoji.mafia} {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <p className="text-sm text-slate-400">Night timer (seconds)</p>
               <div className="mt-1 grid grid-cols-4 gap-2">

@@ -111,6 +111,23 @@ describe('finalizeRoleConfig', () => {
   });
 });
 
+describe('createRoom theme', () => {
+  it('defaults to the mafia theme', () => {
+    const { room } = roomManager.createRoom('Host');
+    expect(room.theme).toBe('mafia');
+  });
+
+  it('accepts the werewolf theme', () => {
+    const { room } = roomManager.createRoom('Host', undefined, undefined, undefined, 'werewolf');
+    expect(room.theme).toBe('werewolf');
+  });
+
+  it('falls back to mafia for an unknown theme', () => {
+    const { room } = roomManager.createRoom('Host', undefined, undefined, undefined, 'dragons' as never);
+    expect(room.theme).toBe('mafia');
+  });
+});
+
 describe('getExpiredRoomCodes', () => {
   it('does not expire a freshly created, connected room', () => {
     const { room, userId } = roomManager.createRoom('Host');

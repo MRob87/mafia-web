@@ -1,4 +1,4 @@
-import type { Room, RoleConfig, User } from '@mafia/shared';
+import type { Room, RoleConfig, ThemeId, User } from '@mafia/shared';
 import { generateRoomCode } from './roomCode.js';
 
 interface UserRecord extends User {
@@ -92,7 +92,8 @@ export function createRoom(
   displayNameInput: string,
   roleConfigOverrideInput?: Partial<RoleConfig>,
   nightDurationSecondsInput?: number,
-  revealRolesOnDeathInput?: boolean
+  revealRolesOnDeathInput?: boolean,
+  themeInput?: ThemeId
 ): { room: Room; userId: string; sessionToken: string } {
   let roomCode = generateRoomCode();
   while (rooms.has(roomCode)) roomCode = generateRoomCode();
@@ -119,6 +120,8 @@ export function createRoom(
     // keeps the historical behavior (roles hidden until game end) unless the host opts in.
     // Defaults ON: only an explicit `false` keeps roles hidden until the game ends.
     revealRolesOnDeath: revealRolesOnDeathInput !== false,
+    // Only a known theme is accepted; anything else falls back to the classic Mafia skin.
+    theme: themeInput === 'werewolf' ? 'werewolf' : 'mafia',
     createdAt: nowIso(),
   };
 

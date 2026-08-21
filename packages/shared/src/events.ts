@@ -1,4 +1,4 @@
-import type { PlayerView, Room, RoleConfig } from './types.js';
+import type { PlayerView, Room, RoleConfig, ThemeId } from './types.js';
 
 /** Events emitted by the client, handled by the server. */
 export interface ClientToServerEvents {
@@ -8,6 +8,7 @@ export interface ClientToServerEvents {
       roleConfig?: Partial<RoleConfig>;
       nightDurationSeconds?: number;
       revealRolesOnDeath?: boolean;
+      theme?: ThemeId;
     },
     ack: (
       res: { ok: true; room: Room; userId: string; sessionToken: string } | { ok: false; error: string }
