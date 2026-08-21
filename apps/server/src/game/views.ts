@@ -38,8 +38,10 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
   // target is a player's id or NO_VOTE_TARGET. Majority is of the living, so it can only shrink as
   // players die, which is exactly when a standing plurality should re-qualify as a majority.
   const dayVoteCounts: Record<string, number> = {};
-  for (const target of Object.values(game.dayVotes)) {
+  const dayVoteVoters: Record<string, string[]> = {};
+  for (const [voterId, target] of Object.entries(game.dayVotes)) {
     dayVoteCounts[target] = (dayVoteCounts[target] ?? 0) + 1;
+    (dayVoteVoters[target] ??= []).push(voterId);
   }
   const aliveCount = Object.values(game.players).filter((p) => p.isAlive).length;
   const dayVoteMajorityThreshold = Math.floor(aliveCount / 2) + 1;
@@ -87,6 +89,7 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
     lastEliminatedId: game.lastEliminatedId,
     doctorLastProtectedId: self.role === 'doctor' ? (game.doctorLastTarget[userId] ?? null) : null,
     dayVoteCounts,
+    dayVoteVoters,
     dayVoteMajorityThreshold,
     myDayVote: game.dayVotes[userId] ?? null,
     mafiaVoteCounts,

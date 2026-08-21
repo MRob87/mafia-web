@@ -124,7 +124,7 @@ Rooms hold **5–12 players**. Roles are assigned at random when the host starts
 | 🌙 Night | host-set (30–120s) | Mafia pick a target, Doctor protects, Detective investigates |
 | 🔎 Night Results | 15s | Everyone learns who (if anyone) died |
 | 💬 Day — Discussion | 180s | Open debate about who to suspect |
-| 🗳️ Day — Voting | 60s | Vote someone out (or pick **No vote**); live tally marks show each target's count, and a target that reaches a majority of the living glows red. A player is eliminated **only if they reach that majority** — a tie, a plurality that falls short, or No vote all mean no one dies. Click your pick again to retract it. |
+| 🗳️ Day — Voting | 60s | Vote someone out (or pick **No vote**); live tally marks show each target's count with the **avatars of who's voting for whom**, and a target that reaches a majority of the living glows red. A player is eliminated **only if they reach that majority** — a tie, a plurality that falls short, or No vote all mean no one dies. Click your pick again to retract it. |
 | ⚰️ Elimination | 12s | The eliminated player gets last words |
 
 The host can **+1 min** any running phase (night, discussion, or voting) if players need more time, or **Skip Phase** to end it early.

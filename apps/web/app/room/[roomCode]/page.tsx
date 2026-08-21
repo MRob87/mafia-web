@@ -88,6 +88,26 @@ function roleInstructions(phase: string, role: string, isAlive: boolean): string
   return null;
 }
 
+/** The little avatars of who has voted for a given target — "hands raised at the table". Caps the
+ *  row so a crowded target stays compact, spilling the rest into a "+N" chip. */
+function VoterChips({ voterIds, nameById }: { voterIds: string[]; nameById: Map<string, string> }) {
+  if (voterIds.length === 0) return null;
+  const MAX = 6;
+  const shown = voterIds.slice(0, MAX);
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-0.5">
+      {shown.map((vid) => (
+        <span key={vid} title={nameById.get(vid) ?? 'Unknown'} className="inline-flex">
+          <Avatar id={vid} name={nameById.get(vid) ?? 'Unknown'} size="sm" />
+        </span>
+      ))}
+      {voterIds.length > MAX && (
+        <span className="self-center text-[10px] font-medium text-slate-400">+{voterIds.length - MAX}</span>
+      )}
+    </div>
+  );
+}
+
 /** Doctor protects, Detective investigates, Mafia targets — the button text should say so. */
 function nightActionLabel(role: string, selected: boolean): string {
   const verb = role === 'doctor' ? 'Protect' : role === 'detective' ? 'Investigate' : 'Target';
@@ -621,6 +641,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
                             <span className="text-[10px] font-semibold">{voteCount}</span>
                           </div>
                         )}
+                        {view.phase === 'day_voting' && (
+                          <VoterChips voterIds={view.dayVoteVoters[p.userId] ?? []} nameById={nameById} />
+                        )}
 
                         {view.phase === 'night' && view.self.role === 'mafia' && mafiaVoteCount > 0 && (
                           <div
@@ -669,6 +692,7 @@ function RoomView({ roomCode }: { roomCode: string }) {
                               <span className="text-[10px] font-semibold">{noVoteCount}</span>
                             </div>
                           )}
+                          <VoterChips voterIds={view.dayVoteVoters[NO_VOTE_TARGET] ?? []} nameById={nameById} />
                           {view.self.isAlive && (
                             <button
                               onClick={() => submitTarget(NO_VOTE_TARGET)}

@@ -160,6 +160,10 @@ export interface PlayerView {
    *  NO_VOTE_TARGET. Only targets with at least one vote appear. Public to everyone (day votes
    *  are open); re-sent on every vote so clients can render live tally marks. */
   dayVoteCounts: Record<string, number>;
+  /** Live day-vote attribution: targetId -> the voterIds who voted for it (a player's userId or
+   *  NO_VOTE_TARGET). Public — day votes are open — so the client can show who is pointing at
+   *  whom, like hands raised at the table. Kept in sync with dayVoteCounts (count === length). */
+  dayVoteVoters: Record<string, string[]>;
   /** Votes needed for a majority of the living: floor(aliveCount / 2) + 1. A target whose count
    *  reaches this is highlighted client-side as the decision-locked (glowing) choice. */
   dayVoteMajorityThreshold: number;

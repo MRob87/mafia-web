@@ -102,6 +102,10 @@ describe('buildPlayerView role reveal', () => {
     const view = buildPlayerView(game, detective.userId);
     expect(view.dayVoteCounts[villager.userId]).toBe(2);
     expect(view.dayVoteCounts[NO_VOTE_TARGET]).toBe(1);
+    expect([...view.dayVoteVoters[villager.userId]].sort()).toEqual(
+      [mafia[0].userId, mafia[1].userId].sort()
+    );
+    expect(view.dayVoteVoters[NO_VOTE_TARGET]).toEqual([detective.userId]);
     expect(view.dayVoteMajorityThreshold).toBe(4);
     expect(view.myDayVote).toBe(NO_VOTE_TARGET);
 
