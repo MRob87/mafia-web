@@ -102,6 +102,24 @@ export function advancePhase(roomCode: string): void {
   onPhaseChange(roomCode);
 }
 
+/** Host action: pushes the current timed phase's deadline out by `extraMs` and reschedules its
+ *  auto-advance timer to match. No-op error for phases that have no timer (lobby/role_assign/
+ *  game_over). Caller is responsible for re-broadcasting views so clients see the new deadline. */
+export function extendPhase(roomCode: string, extraMs: number): string | null {
+  const game = games.get(roomCode);
+  if (!game) return 'Game not found.';
+  if (!isTimedPhase(game.phase) || !game.phaseEndsAt) return 'This phase has no timer to extend.';
+
+  const newEndMs = new Date(game.phaseEndsAt).getTime() + extraMs;
+  game.phaseEndsAt = new Date(newEndMs).toISOString();
+
+  // Reschedule against the new deadline rather than adding a second timer.
+  clearTimer(roomCode);
+  const timer = setTimeout(() => advancePhase(roomCode), Math.max(0, newEndMs - Date.now()));
+  timers.set(roomCode, timer);
+  return null;
+}
+
 export function submitNightAction(roomCode: string, actorId: string, targetId: string): string | null {
   const game = games.get(roomCode);
   if (!game) return 'Game not found.';

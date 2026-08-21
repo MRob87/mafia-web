@@ -37,6 +37,9 @@ export interface ClientToServerEvents {
   /** Host only: forces the current phase to end immediately. */
   'room:skipPhase': (payload: { roomCode: string }) => void;
 
+  /** Host only: adds a fixed amount of time (server-decided) to the current timed phase. */
+  'room:extendPhase': (payload: { roomCode: string }) => void;
+
   /** Host only: removes a player from the lobby, or eliminates them if a game is running. */
   'room:kick': (payload: { roomCode: string; targetUserId: string }) => void;
 

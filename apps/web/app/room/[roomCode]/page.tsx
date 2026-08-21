@@ -361,6 +361,11 @@ function RoomView({ roomCode }: { roomCode: string }) {
     getSocket().emit('room:skipPhase', { roomCode: session.roomCode });
   }
 
+  function extendPhase() {
+    if (!session) return;
+    getSocket().emit('room:extendPhase', { roomCode: session.roomCode });
+  }
+
   function restartGame() {
     if (!session) return;
     if (!window.confirm('Restart the game? Everyone will be sent back to the lobby.')) return;
@@ -451,6 +456,11 @@ function RoomView({ roomCode }: { roomCode: string }) {
 
                 {isHost && (
                   <div className="mt-3 flex flex-wrap gap-2">
+                    {view.phaseEndsAt && (
+                      <button onClick={extendPhase} className={ghostButtonClass}>
+                        +1 min
+                      </button>
+                    )}
                     {view.phase !== 'game_over' && (
                       <button onClick={skipPhase} className={ghostButtonClass}>
                         Skip Phase

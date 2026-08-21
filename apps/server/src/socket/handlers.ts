@@ -26,6 +26,8 @@ function sanitizeText(value: unknown, maxLength: number): string {
 
 const CHAT_TEXT_MAX_LENGTH = 500;
 const IDLE_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+/** How much time the host's "add time" control grants per press. */
+const PHASE_EXTENSION_MS = 60_000;
 
 /**
  * Every handler below runs inside this wrapper. A malformed/unexpected payload (or any other
@@ -303,6 +305,26 @@ export function registerHandlers(io: IoServer): void {
           return;
         }
         gameManager.advancePhase(roomCode);
+      })
+    );
+
+    socket.on(
+      'room:extendPhase',
+      safe(({ roomCode }) => {
+        const { userId } = socketData(socket);
+        const room = roomManager.getRoom(roomCode);
+        if (!room || !userId) return;
+        if (room.hostId !== userId) {
+          socket.emit('error', { message: 'Only the host can add time.' });
+          return;
+        }
+        const error = gameManager.extendPhase(roomCode, PHASE_EXTENSION_MS);
+        if (error) {
+          socket.emit('error', { message: error });
+          return;
+        }
+        // Push the new deadline to everyone so their countdowns update.
+        broadcastGameViews(io, roomCode);
       })
     );
 

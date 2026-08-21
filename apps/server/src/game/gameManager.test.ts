@@ -137,6 +137,31 @@ describe('advancePhase', () => {
   });
 });
 
+describe('extendPhase', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('pushes the current timed phase deadline out by the given amount', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room); // opens on night (a timed phase)
+    const before = new Date(game.phaseEndsAt!).getTime();
+
+    expect(gameManager.extendPhase(room.roomCode, 60_000)).toBeNull();
+    expect(new Date(game.phaseEndsAt!).getTime()).toBe(before + 60_000);
+
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('refuses to extend a phase that has no timer', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room);
+    game.phase = 'game_over';
+    game.phaseEndsAt = null;
+
+    expect(gameManager.extendPhase(room.roomCode, 60_000)).toBe('This phase has no timer to extend.');
+    gameManager.endGame(room.roomCode);
+  });
+});
+
 describe('submitNightAction', () => {
   afterEach(() => vi.useRealTimers());
 
