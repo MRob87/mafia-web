@@ -45,6 +45,11 @@ export interface Room {
    *  they die (classic tabletop "flip the card"). When false (default), roles stay hidden until
    *  the game ends. Set at room creation; locked into the GameInstance when the game starts. */
   revealRolesOnDeath: boolean;
+  /** Host option (default true): when true, the game opens in day discussion instead of a kill
+   *  night, so no one dies before anyone has spoken — the first death, if any, comes from a day
+   *  vote. When false, play opens on Night 1 with a live Mafia kill (the classic start). Set at
+   *  room creation; locked into the GameInstance when the game starts. */
+  startOnDay: boolean;
   createdAt: string;
 }
 
@@ -98,6 +103,9 @@ export interface GameInstance {
   nightDurationMs: number;
   /** Locked in from Room.revealRolesOnDeath when the game starts — see that field. */
   revealRolesOnDeath: boolean;
+  /** Locked in from Room.startOnDay when the game starts — see that field. Only read at
+   *  startGame to pick the opening phase; kept on the instance for debugging/introspection. */
+  startOnDay: boolean;
   /** Each Doctor's target from the immediately preceding night (doctorId -> targetId), used to
    *  enforce the always-on "no protecting the same player two nights in a row" rule (self counts,
    *  since protecting yourself is just targeting your own id). Rebuilt every night resolution

@@ -52,12 +52,15 @@ export function startGame(room: Room): GameInstance {
     winner: null,
     nightDurationMs: room.nightDurationSeconds * 1000,
     revealRolesOnDeath: room.revealRolesOnDeath,
+    startOnDay: room.startOnDay,
     doctorLastTarget: {},
     lastEliminatedId: null,
   };
 
   games.set(room.roomCode, game);
-  transitionTo(game, 'night');
+  // Start on day discussion (no opening kill) unless the host chose the classic Night-1 start.
+  // The rest of the cycle is unchanged: elimination loops back to night either way.
+  transitionTo(game, room.startOnDay ? 'day_discussion' : 'night');
   return game;
 }
 

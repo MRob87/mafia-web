@@ -16,6 +16,7 @@ export default function HomePage() {
   const [roomCode, setRoomCode] = useState('');
   const [nightDurationSeconds, setNightDurationSeconds] = useState(60);
   const [revealRolesOnDeath, setRevealRolesOnDeath] = useState(false);
+  const [startOnDay, setStartOnDay] = useState(true);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [pending, setPending] = useState(false);
   const toastIdRef = useRef(0);
@@ -53,7 +54,7 @@ export default function HomePage() {
     setPending(true);
     getSocket().emit(
       'room:create',
-      { displayName, nightDurationSeconds, revealRolesOnDeath },
+      { displayName, nightDurationSeconds, revealRolesOnDeath, startOnDay },
       (res) => {
         setPending(false);
         if (!res.ok) {
@@ -156,6 +157,22 @@ export default function HomePage() {
                 <span className="mt-0.5 block text-slate-400">
                   Show an eliminated player&apos;s role to everyone the moment they die (classic rules).
                   Off keeps every role hidden until the game ends.
+                </span>
+              </span>
+            </label>
+
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={startOnDay}
+                onChange={(e) => setStartOnDay(e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-indigo-600"
+              />
+              <span className="text-sm">
+                <span className="font-semibold text-slate-100">Start on day</span>
+                <span className="mt-0.5 block text-slate-400">
+                  Open with a day discussion so no one dies before anyone has spoken. Off starts on
+                  Night 1 with a live Mafia kill (classic).
                 </span>
               </span>
             </label>

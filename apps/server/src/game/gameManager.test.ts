@@ -3,7 +3,12 @@ import type { Room, RoleConfig } from '@mafia/shared';
 import * as gameManager from './gameManager.js';
 
 let roomCounter = 0;
-function makeRoom(playerCount: number, roleConfig: RoleConfig, nightDurationSeconds = 30): Room {
+function makeRoom(
+  playerCount: number,
+  roleConfig: RoleConfig,
+  nightDurationSeconds = 30,
+  startOnDay = false
+): Room {
   roomCounter += 1;
   const roomCode = `ROOM${roomCounter}`;
   const playerIds = Array.from({ length: playerCount }, (_, i) => `p${i}`);
@@ -18,6 +23,7 @@ function makeRoom(playerCount: number, roleConfig: RoleConfig, nightDurationSeco
     players: playerIds.map((id) => ({ userId: id, displayName: id })),
     nightDurationSeconds,
     revealRolesOnDeath: false,
+    startOnDay,
     createdAt: new Date().toISOString(),
   };
 }
@@ -47,6 +53,15 @@ describe('startGame', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 45);
     const game = gameManager.startGame(room);
     expect(game.nightDurationMs).toBe(45_000);
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('opens in day discussion (no opening kill) when startOnDay is set', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 30, true);
+    const game = gameManager.startGame(room);
+    expect(game.phase).toBe('day_discussion');
+    // No one has died before the first discussion.
+    expect(Object.values(game.players).every((p) => p.isAlive)).toBe(true);
     gameManager.endGame(room.roomCode);
   });
 });

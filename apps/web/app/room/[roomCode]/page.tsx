@@ -405,6 +405,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
             <p className="text-sm text-slate-400">
               Reveal roles on death: {room.revealRolesOnDeath ? 'On' : 'Off'}
             </p>
+            <p className="text-sm text-slate-400">
+              First phase: {room.startOnDay ? 'Day (no opening kill)' : 'Night'}
+            </p>
 
             <div className="mt-3">
               <Rules />
