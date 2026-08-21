@@ -18,7 +18,6 @@ function makeRoom(playerCount: number, roleConfig: RoleConfig, revealRolesOnDeat
     players: playerIds.map((id) => ({ userId: id, displayName: id })),
     nightDurationSeconds: 30,
     revealRolesOnDeath,
-    doctorNoSelfSave: false,
     createdAt: new Date().toISOString(),
   };
 }

@@ -45,10 +45,6 @@ export interface Room {
    *  they die (classic tabletop "flip the card"). When false (default), roles stay hidden until
    *  the game ends. Set at room creation; locked into the GameInstance when the game starts. */
   revealRolesOnDeath: boolean;
-  /** Host option: when true, the Doctor may not protect themselves (a common balance house
-   *  rule — unlimited self-protection is hard to counter). When false (default), self-protection
-   *  is allowed. Set at room creation; locked into the GameInstance when the game starts. */
-  doctorNoSelfSave: boolean;
   createdAt: string;
 }
 
@@ -102,8 +98,11 @@ export interface GameInstance {
   nightDurationMs: number;
   /** Locked in from Room.revealRolesOnDeath when the game starts — see that field. */
   revealRolesOnDeath: boolean;
-  /** Locked in from Room.doctorNoSelfSave when the game starts — see that field. */
-  doctorNoSelfSave: boolean;
+  /** Each Doctor's target from the immediately preceding night (doctorId -> targetId), used to
+   *  enforce the always-on "no protecting the same player two nights in a row" rule (self counts,
+   *  since protecting yourself is just targeting your own id). Rebuilt every night resolution
+   *  from that night's doctor actions, so skipping a night clears a doctor's constraint. */
+  doctorLastTarget: Record<string, string>;
   /** Who the most recent day vote eliminated, if anyone — they get a last-words window. */
   lastEliminatedId: string | null;
 }
@@ -140,7 +139,8 @@ export interface PlayerView {
   winner: 'mafia' | 'villagers' | null;
   /** Who the most recent day vote eliminated, if anyone — drives the last-words prompt. */
   lastEliminatedId: string | null;
-  /** Mirror of the room's doctor-no-self-save option, so the client can hide the self-target
-   *  affordance and tailor the Doctor's night instructions. Enforced server-side regardless. */
-  doctorNoSelfSave: boolean;
+  /** For a Doctor viewer only: the player they protected last night, if any — the client uses
+   *  it to disable re-selecting that target (they can't protect the same person, or themselves,
+   *  two nights running). null for every other role and on the first night. */
+  doctorLastProtectedId: string | null;
 }

@@ -8,7 +8,6 @@ export interface ClientToServerEvents {
       roleConfig?: Partial<RoleConfig>;
       nightDurationSeconds?: number;
       revealRolesOnDeath?: boolean;
-      doctorNoSelfSave?: boolean;
     },
     ack: (
       res: { ok: true; room: Room; userId: string; sessionToken: string } | { ok: false; error: string }

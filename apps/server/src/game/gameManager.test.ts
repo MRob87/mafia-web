@@ -3,12 +3,7 @@ import type { Room, RoleConfig } from '@mafia/shared';
 import * as gameManager from './gameManager.js';
 
 let roomCounter = 0;
-function makeRoom(
-  playerCount: number,
-  roleConfig: RoleConfig,
-  nightDurationSeconds = 30,
-  doctorNoSelfSave = false
-): Room {
+function makeRoom(playerCount: number, roleConfig: RoleConfig, nightDurationSeconds = 30): Room {
   roomCounter += 1;
   const roomCode = `ROOM${roomCounter}`;
   const playerIds = Array.from({ length: playerCount }, (_, i) => `p${i}`);
@@ -23,7 +18,6 @@ function makeRoom(
     players: playerIds.map((id) => ({ userId: id, displayName: id })),
     nightDurationSeconds,
     revealRolesOnDeath: false,
-    doctorNoSelfSave,
     createdAt: new Date().toISOString(),
   };
 }
@@ -164,35 +158,43 @@ describe('submitNightAction', () => {
     gameManager.endGame(room.roomCode);
   });
 
-  it('blocks a doctor from protecting themselves when doctorNoSelfSave is on', () => {
-    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 30, true);
+  it('blocks a doctor from protecting the same player two nights in a row', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
     const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
+    const otherId = Object.keys(game.players).find((id) => id !== doctorId)!;
+    // Simulate: the doctor protected `otherId` last night.
+    game.doctorLastTarget[doctorId] = otherId;
 
-    const error = gameManager.submitNightAction(room.roomCode, doctorId, doctorId);
-    expect(error).toBe("You can't protect yourself in this game.");
+    const error = gameManager.submitNightAction(room.roomCode, doctorId, otherId);
+    expect(error).toBe("You protected this player last night — you can't do so two nights in a row.");
     expect(game.nightActions).toHaveLength(0);
     gameManager.endGame(room.roomCode);
   });
 
-  it('still lets a doctor protect themselves when doctorNoSelfSave is off (default)', () => {
+  it('blocks a doctor from protecting themselves two nights in a row', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
     const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
+    game.doctorLastTarget[doctorId] = doctorId;
 
-    expect(gameManager.submitNightAction(room.roomCode, doctorId, doctorId)).toBeNull();
-    expect(game.nightActions[0].targetId).toBe(doctorId);
+    const error = gameManager.submitNightAction(room.roomCode, doctorId, doctorId);
+    expect(error).toBe("You protected yourself last night — you can't do so two nights in a row.");
     gameManager.endGame(room.roomCode);
   });
 
-  it('with doctorNoSelfSave on, still lets the doctor protect someone else', () => {
-    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 30, true);
+  it('lets a doctor protect a different player than last night (and self-protect when it was someone else)', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
     const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
     const otherId = Object.keys(game.players).find((id) => id !== doctorId)!;
+    game.doctorLastTarget[doctorId] = otherId;
 
-    expect(gameManager.submitNightAction(room.roomCode, doctorId, otherId)).toBeNull();
-    expect(game.nightActions[0].targetId).toBe(otherId);
+    // A different target is fine...
+    const thirdId = Object.keys(game.players).find((id) => id !== doctorId && id !== otherId)!;
+    expect(gameManager.submitNightAction(room.roomCode, doctorId, thirdId)).toBeNull();
+    // ...and self-protection is allowed since last night's target was someone else.
+    expect(gameManager.submitNightAction(room.roomCode, doctorId, doctorId)).toBeNull();
     gameManager.endGame(room.roomCode);
   });
 

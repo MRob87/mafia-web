@@ -60,6 +60,6 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
     investigationHistory: ownInvestigations.map((r) => ({ targetId: r.targetId, isMafia: r.isMafia })),
     winner: game.winner,
     lastEliminatedId: game.lastEliminatedId,
-    doctorNoSelfSave: game.doctorNoSelfSave,
+    doctorLastProtectedId: self.role === 'doctor' ? (game.doctorLastTarget[userId] ?? null) : null,
   };
 }

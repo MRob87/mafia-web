@@ -20,7 +20,7 @@ function makeGame(players: PlayerGameState[], overrides: Partial<GameInstance> =
     winner: null,
     nightDurationMs: 30_000,
     revealRolesOnDeath: false,
-    doctorNoSelfSave: false,
+    doctorLastTarget: {},
     lastEliminatedId: null,
     ...overrides,
   };
@@ -87,6 +87,24 @@ describe('resolveNightActions', () => {
     });
     resolveNightActions(game);
     expect(game.nightActions).toEqual([]);
+  });
+
+  it("records the doctor's target in doctorLastTarget for the next-night repeat check", () => {
+    const game = makeGame([player('doc1', 'doctor'), player('v1', 'villager')], {
+      nightActions: [{ actorId: 'doc1', role: 'doctor', targetId: 'v1', submittedAt: '' }],
+    });
+    resolveNightActions(game);
+    expect(game.doctorLastTarget).toEqual({ doc1: 'v1' });
+  });
+
+  it('rebuilds doctorLastTarget each night, clearing a doctor who sat the night out', () => {
+    const game = makeGame([player('doc1', 'doctor'), player('v1', 'villager')], {
+      // Doctor protected v1 last night, but submits no action this night.
+      doctorLastTarget: { doc1: 'v1' },
+      nightActions: [],
+    });
+    resolveNightActions(game);
+    expect(game.doctorLastTarget).toEqual({});
   });
 });
 

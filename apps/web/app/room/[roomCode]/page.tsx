@@ -72,19 +72,12 @@ function describeEvent(event: GameEvent, nameById: Map<string, string>): string 
 }
 
 /** What a player should be doing right now, phase by phase. */
-function roleInstructions(
-  phase: string,
-  role: string,
-  isAlive: boolean,
-  doctorNoSelfSave: boolean
-): string | null {
+function roleInstructions(phase: string, role: string, isAlive: boolean): string | null {
   if (!isAlive) return null;
   if (phase === 'night') {
     if (role === 'mafia') return 'Choose a player to eliminate. Coordinate with your fellow Mafia below.';
     if (role === 'doctor')
-      return doctorNoSelfSave
-        ? "Choose a player to protect from tonight's Mafia attack — you can't protect yourself."
-        : "Choose a player to protect from tonight's Mafia attack — you may protect yourself.";
+      return "Choose a player to protect from tonight's Mafia attack — you may protect yourself, but not the same player two nights in a row.";
     if (role === 'detective') return "Choose a player to investigate — you'll learn whether they're Mafia.";
     return 'You have no night action. Sit tight until morning.';
   }
@@ -412,9 +405,6 @@ function RoomView({ roomCode }: { roomCode: string }) {
             <p className="text-sm text-slate-400">
               Reveal roles on death: {room.revealRolesOnDeath ? 'On' : 'Off'}
             </p>
-            <p className="text-sm text-slate-400">
-              Doctor self-protect: {room.doctorNoSelfSave ? 'Off' : 'On'}
-            </p>
 
             <div className="mt-3">
               <Rules />
@@ -482,9 +472,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     {ROLE_EMOJI[view.self.role] ?? ''} {view.self.role}
                   </span>
                 </p>
-                {roleInstructions(view.phase, view.self.role, view.self.isAlive, view.doctorNoSelfSave) && (
+                {roleInstructions(view.phase, view.self.role, view.self.isAlive) && (
                   <p className="mt-1 text-sm text-slate-400">
-                    {roleInstructions(view.phase, view.self.role, view.self.isAlive, view.doctorNoSelfSave)}
+                    {roleInstructions(view.phase, view.self.role, view.self.isAlive)}
                   </p>
                 )}
                 {!view.self.isAlive && (
@@ -523,17 +513,23 @@ function RoomView({ roomCode }: { roomCode: string }) {
                 <PlayerGrid>
                   {view.players.map((p) => {
                     const avatarState: AvatarState = !p.isAlive ? 'dead' : view.phase === 'night' ? 'sleeping' : 'idle';
-                    const canTargetSelf =
-                      p.userId === view.self.userId && view.self.role === 'doctor' && !view.doctorNoSelfSave;
+                    const canTargetSelf = p.userId === view.self.userId && view.self.role === 'doctor';
+                    // Doctor can't protect the same player (or themselves) two nights running.
+                    const protectedLastNight =
+                      view.self.role === 'doctor' &&
+                      view.phase === 'night' &&
+                      p.userId === view.doctorLastProtectedId;
                     const canAct =
                       view.self.isAlive &&
                       p.isAlive &&
                       (p.userId !== view.self.userId || canTargetSelf) &&
+                      !protectedLastNight &&
                       ACTING_ROLES.has(view.self.role) &&
                       view.phase === 'night';
                     const canVote =
                       view.self.isAlive && p.isAlive && p.userId !== view.self.userId && view.phase === 'day_voting';
                     const alreadyInvestigated = view.self.role === 'detective' && investigatedById.has(p.userId);
+                    const showProtectedLastNight = view.self.isAlive && p.isAlive && protectedLastNight;
                     const selected = p.userId === selectedTargetId;
 
                     return (
@@ -570,6 +566,10 @@ function RoomView({ roomCode }: { roomCode: string }) {
                               ? 'Protect Yourself'
                               : nightActionLabel(view.self.role, selected)}
                           </button>
+                        ) : showProtectedLastNight ? (
+                          <span className="text-[11px] font-semibold text-slate-500">
+                            Protected last night
+                          </span>
                         ) : null}
 
                         {canVote && (

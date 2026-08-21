@@ -52,7 +52,7 @@ export function startGame(room: Room): GameInstance {
     winner: null,
     nightDurationMs: room.nightDurationSeconds * 1000,
     revealRolesOnDeath: room.revealRolesOnDeath,
-    doctorNoSelfSave: room.doctorNoSelfSave,
+    doctorLastTarget: {},
     lastEliminatedId: null,
   };
 
@@ -106,10 +106,15 @@ export function submitNightAction(roomCode: string, actorId: string, targetId: s
   const actor = game.players[actorId];
   if (!actor?.isAlive) return 'You are not able to act.';
   if (actor.role === 'villager') return 'Villagers have no night action.';
-  // Host balance option: the Doctor may be barred from protecting themselves. Enforced here
-  // server-side so a crafted night:action can't bypass the client hiding the self affordance.
-  if (actor.role === 'doctor' && game.doctorNoSelfSave && targetId === actorId) {
-    return "You can't protect yourself in this game.";
+  // The Doctor may protect anyone (including themselves), but never the same player two nights
+  // running — protecting yourself twice in a row is just targeting your own id twice, so this
+  // one check covers both. game.doctorLastTarget holds only the previous night's picks (it's
+  // rebuilt each night resolution), so skipping a night frees the constraint. Enforced here
+  // server-side so a crafted night:action can't bypass the client disabling that target.
+  if (actor.role === 'doctor' && game.doctorLastTarget[actorId] === targetId) {
+    return targetId === actorId
+      ? "You protected yourself last night — you can't do so two nights in a row."
+      : "You protected this player last night — you can't do so two nights in a row.";
   }
   // A role never changes mid-game, so re-investigating the same player can never learn
   // anything new — mirrors the client hiding that option once it's already been used.

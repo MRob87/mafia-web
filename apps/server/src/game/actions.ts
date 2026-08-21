@@ -26,8 +26,14 @@ function pluralityTarget(targets: string[]): string | null {
 
 export function resolveNightActions(game: GameInstance): void {
   const mafiaTargets = game.nightActions.filter((a) => a.role === 'mafia').map((a) => a.targetId);
-  const doctorSaves = game.nightActions.filter((a) => a.role === 'doctor').map((a) => a.targetId);
+  const doctorActions = game.nightActions.filter((a) => a.role === 'doctor');
+  const doctorSaves = doctorActions.map((a) => a.targetId);
   const detectiveChecks = game.nightActions.filter((a) => a.role === 'detective');
+
+  // Record this night's doctor picks so next night's submitNightAction can block a repeat.
+  // Rebuilt fresh (not merged) so a doctor who sat out this night starts next night unconstrained.
+  game.doctorLastTarget = {};
+  for (const a of doctorActions) game.doctorLastTarget[a.actorId] = a.targetId;
 
   const killTarget = pluralityTarget(mafiaTargets);
   const saved = new Set(doctorSaves);

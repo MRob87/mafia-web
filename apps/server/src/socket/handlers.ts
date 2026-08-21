@@ -177,8 +177,7 @@ export function registerHandlers(io: IoServer): void {
           payload.displayName,
           payload.roleConfig,
           payload.nightDurationSeconds,
-          payload.revealRolesOnDeath,
-          payload.doctorNoSelfSave
+          payload.revealRolesOnDeath
         );
         roomManager.attachSocket(userId, socket.id);
         leavePreviousRoom(socket, room.roomCode);
