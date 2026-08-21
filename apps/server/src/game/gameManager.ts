@@ -53,15 +53,14 @@ export function startGame(room: Room): GameInstance {
     winner: null,
     nightDurationMs: room.nightDurationSeconds * 1000,
     revealRolesOnDeath: room.revealRolesOnDeath,
-    startOnDay: room.startOnDay,
     doctorLastTarget: {},
     lastEliminatedId: null,
   };
 
   games.set(room.roomCode, game);
-  // Start on day discussion (no opening kill) unless the host chose the classic Night-1 start.
-  // The rest of the cycle is unchanged: elimination loops back to night either way.
-  transitionTo(game, room.startOnDay ? 'day_discussion' : 'night');
+  // Always open on day discussion — no one dies before anyone has spoken; the first death, if
+  // any, comes from a day vote. The rest of the cycle is unchanged (elimination loops to night).
+  transitionTo(game, 'day_discussion');
   return game;
 }
 

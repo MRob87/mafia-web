@@ -85,8 +85,7 @@ export function createRoom(
   displayNameInput: string,
   roleConfigOverrideInput?: Partial<RoleConfig>,
   nightDurationSecondsInput?: number,
-  revealRolesOnDeathInput?: boolean,
-  startOnDayInput?: boolean
+  revealRolesOnDeathInput?: boolean
 ): { room: Room; userId: string; sessionToken: string } {
   let roomCode = generateRoomCode();
   while (rooms.has(roomCode)) roomCode = generateRoomCode();
@@ -112,8 +111,6 @@ export function createRoom(
     // Coerce to a strict boolean — never trust the raw client value's type. Default false
     // keeps the historical behavior (roles hidden until game end) unless the host opts in.
     revealRolesOnDeath: revealRolesOnDeathInput === true,
-    // Defaults ON: only an explicit `false` opts back into the classic Night-1-kill start.
-    startOnDay: startOnDayInput !== false,
     createdAt: nowIso(),
   };
 

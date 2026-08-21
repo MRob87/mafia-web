@@ -37,9 +37,8 @@ export function Rules({ defaultOpen = false, title = 'Full rules' }: { defaultOp
             </li>
           </ul>
           <p className="mt-1 text-slate-400">
-            By default the game opens on Day (Discussion), so no one dies before anyone has spoken — the first death
-            comes from a vote. The host can add time to any phase, and controls a few room options (like starting on
-            Night instead) when creating the room.
+            The game opens on Day (Discussion), so no one dies before anyone has spoken — the first death comes from a
+            vote. The host can add time to any phase if players need it.
           </p>
         </div>
 

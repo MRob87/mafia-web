@@ -4,12 +4,7 @@ import { NO_VOTE_TARGET } from '@mafia/shared';
 import * as gameManager from './gameManager.js';
 
 let roomCounter = 0;
-function makeRoom(
-  playerCount: number,
-  roleConfig: RoleConfig,
-  nightDurationSeconds = 30,
-  startOnDay = false
-): Room {
+function makeRoom(playerCount: number, roleConfig: RoleConfig, nightDurationSeconds = 30): Room {
   roomCounter += 1;
   const roomCode = `ROOM${roomCounter}`;
   const playerIds = Array.from({ length: playerCount }, (_, i) => `p${i}`);
@@ -24,7 +19,6 @@ function makeRoom(
     players: playerIds.map((id) => ({ userId: id, displayName: id })),
     nightDurationSeconds,
     revealRolesOnDeath: false,
-    startOnDay,
     createdAt: new Date().toISOString(),
   };
 }
@@ -35,12 +29,13 @@ describe('startGame', () => {
     vi.useRealTimers();
   });
 
-  it('assigns roles matching roleConfig and starts everyone alive in the night phase', () => {
+  it('assigns roles matching roleConfig and opens on day discussion with everyone alive', () => {
     const roleConfig: RoleConfig = { mafia: 1, doctor: 1, detective: 1, villager: 2 };
     const room = makeRoom(5, roleConfig);
     const game = gameManager.startGame(room);
 
-    expect(game.phase).toBe('night');
+    // The game always opens on day discussion — no one dies before anyone has spoken.
+    expect(game.phase).toBe('day_discussion');
     expect(Object.keys(game.players)).toHaveLength(5);
     expect(Object.values(game.players).every((p) => p.isAlive)).toBe(true);
     const counts = { mafia: 0, doctor: 0, detective: 0, villager: 0 };
@@ -56,15 +51,6 @@ describe('startGame', () => {
     expect(game.nightDurationMs).toBe(45_000);
     gameManager.endGame(room.roomCode);
   });
-
-  it('opens in day discussion (no opening kill) when startOnDay is set', () => {
-    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 }, 30, true);
-    const game = gameManager.startGame(room);
-    expect(game.phase).toBe('day_discussion');
-    // No one has died before the first discussion.
-    expect(Object.values(game.players).every((p) => p.isAlive)).toBe(true);
-    gameManager.endGame(room.roomCode);
-  });
 });
 
 describe('advancePhase', () => {
@@ -73,10 +59,11 @@ describe('advancePhase', () => {
   });
 
   function startFrozenGame(playerCount: number, roleConfig: RoleConfig) {
-    // startGame schedules a real setTimeout for the night phase; freeze time immediately after
-    // so tests drive advancePhase() manually instead of racing a real timer.
+    // Games open on day discussion; these tests exercise the night-anchored cycle, so drop the
+    // game to night first and let them drive advancePhase() manually rather than race a timer.
     const room = makeRoom(playerCount, roleConfig);
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     return { room, game };
   }
 
@@ -168,6 +155,7 @@ describe('submitNightAction', () => {
   it('rejects an action from a dead player', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     const targetId = Object.keys(game.players).find((id) => id !== room.hostId)!;
     game.players[room.hostId].isAlive = false;
 
@@ -179,6 +167,7 @@ describe('submitNightAction', () => {
   it('rejects a villager submitting a night action', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     const villagerId = Object.values(game.players).find((p) => p.role === 'villager')!.userId;
     const otherId = Object.keys(game.players).find((id) => id !== villagerId)!;
 
@@ -190,6 +179,7 @@ describe('submitNightAction', () => {
   it('blocks a detective from re-investigating a player they already checked', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     const detectiveId = Object.values(game.players).find((p) => p.role === 'detective')!.userId;
     const targetId = Object.keys(game.players).find((id) => id !== detectiveId)!;
     game.investigationResults.push({ detectiveId, targetId, isMafia: false, dayNumber: 1 });
@@ -202,6 +192,7 @@ describe('submitNightAction', () => {
   it('blocks a doctor from protecting the same player two nights in a row', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
     const otherId = Object.keys(game.players).find((id) => id !== doctorId)!;
     // Simulate: the doctor protected `otherId` last night.
@@ -216,6 +207,7 @@ describe('submitNightAction', () => {
   it('blocks a doctor from protecting themselves two nights in a row', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
     game.doctorLastTarget[doctorId] = doctorId;
 
@@ -227,6 +219,7 @@ describe('submitNightAction', () => {
   it('lets a doctor protect a different player than last night (and self-protect when it was someone else)', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     const doctorId = Object.values(game.players).find((p) => p.role === 'doctor')!.userId;
     const otherId = Object.keys(game.players).find((id) => id !== doctorId)!;
     game.doctorLastTarget[doctorId] = otherId;
@@ -242,6 +235,7 @@ describe('submitNightAction', () => {
   it('accepts a valid action and replaces any prior action from the same actor', () => {
     const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
     const game = gameManager.startGame(room);
+    game.phase = 'night';
     const mafiaId = Object.values(game.players).find((p) => p.role === 'mafia')!.userId;
     const ids = Object.keys(game.players).filter((id) => id !== mafiaId);
 
