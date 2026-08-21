@@ -388,7 +388,12 @@ export function registerHandlers(io: IoServer): void {
         if (!userId || !isNonEmptyString(targetId)) return;
         if (!actionLimiter.isAllowed(socket.id)) return;
         const error = gameManager.submitDayVote(roomCode, userId, targetId);
-        if (error) socket.emit('error', { message: error });
+        if (error) {
+          socket.emit('error', { message: error });
+          return;
+        }
+        // Push the updated tally to everyone so vote counts and the majority glow update live.
+        broadcastGameViews(io, roomCode);
       })
     );
 

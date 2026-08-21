@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { GameInstance, PlayerGameState, Role } from '@mafia/shared';
+import { NO_VOTE_TARGET } from '@mafia/shared';
 import { resolveNightActions, resolveDayVote, checkWinCondition } from './actions.js';
 
 function player(userId: string, role: Role, isAlive = true): PlayerGameState {
@@ -128,6 +129,33 @@ describe('resolveDayVote', () => {
     expect(game.players.a.isAlive).toBe(true);
     expect(game.players.b.isAlive).toBe(true);
     expect(game.lastEliminatedId).toBeNull();
+  });
+
+  it('eliminates no one when the No-vote option wins the plurality', () => {
+    const game = makeGame([player('a', 'villager'), player('b', 'villager'), player('c', 'mafia')], {
+      // Two no-votes out-vote the single vote against c.
+      dayVotes: { a: NO_VOTE_TARGET, b: NO_VOTE_TARGET, c: 'a' },
+    });
+    resolveDayVote(game);
+    expect(Object.values(game.players).every((p) => p.isAlive)).toBe(true);
+    expect(game.lastEliminatedId).toBeNull();
+    expect(game.eventLog).toContainEqual(
+      expect.objectContaining({
+        type: 'system',
+        payload: expect.objectContaining({ message: 'The town voted not to eliminate anyone.' }),
+      })
+    );
+  });
+
+  it('eliminates a plurality target even without an outright majority', () => {
+    // 2 for c, 1 for a, 1 no-vote — c has a plurality but not a majority of 4; still lynched.
+    const game = makeGame(
+      [player('a', 'villager'), player('b', 'villager'), player('c', 'mafia'), player('d', 'villager')],
+      { dayVotes: { a: 'c', b: 'c', c: 'a', d: NO_VOTE_TARGET } }
+    );
+    resolveDayVote(game);
+    expect(game.players.c.isAlive).toBe(false);
+    expect(game.lastEliminatedId).toBe('c');
   });
 
   it('increments dayNumber and clears dayVotes', () => {

@@ -34,6 +34,16 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
   const ownInvestigations = game.investigationResults.filter((r) => r.detectiveId === userId);
   const lastInvestigation = ownInvestigations[ownInvestigations.length - 1];
 
+  // Live day-vote tally (public — day votes are open). Counts every cast vote by target, where a
+  // target is a player's id or NO_VOTE_TARGET. Majority is of the living, so it can only shrink as
+  // players die, which is exactly when a standing plurality should re-qualify as a majority.
+  const dayVoteCounts: Record<string, number> = {};
+  for (const target of Object.values(game.dayVotes)) {
+    dayVoteCounts[target] = (dayVoteCounts[target] ?? 0) + 1;
+  }
+  const aliveCount = Object.values(game.players).filter((p) => p.isAlive).length;
+  const dayVoteMajorityThreshold = Math.floor(aliveCount / 2) + 1;
+
   return {
     roomCode: game.roomCode,
     phase: game.phase,
@@ -61,5 +71,8 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
     winner: game.winner,
     lastEliminatedId: game.lastEliminatedId,
     doctorLastProtectedId: self.role === 'doctor' ? (game.doctorLastTarget[userId] ?? null) : null,
+    dayVoteCounts,
+    dayVoteMajorityThreshold,
+    myDayVote: game.dayVotes[userId] ?? null,
   };
 }

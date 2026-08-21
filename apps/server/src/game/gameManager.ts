@@ -1,4 +1,5 @@
 import type { GameInstance, NightAction, Phase, Room, Role } from '@mafia/shared';
+import { NO_VOTE_TARGET } from '@mafia/shared';
 import { assignRoles } from './roles.js';
 import { nextPhase, isTimedPhase, phaseDurationMs } from './stateMachine.js';
 import { resolveNightActions, resolveDayVote, checkWinCondition } from './actions.js';
@@ -139,8 +140,19 @@ export function submitDayVote(roomCode: string, voterId: string, targetId: strin
   if (!game) return 'Game not found.';
   if (game.phase !== 'day_voting') return 'Not the voting phase.';
   if (!game.players[voterId]?.isAlive) return 'Dead players cannot vote.';
+  // A vote must be for the explicit "no lynch" option or a living player — never the dead or a
+  // nonexistent id (which would silently sit in the tally and skew the majority math).
+  if (targetId !== NO_VOTE_TARGET && !game.players[targetId]?.isAlive) {
+    return "You can't vote for that player.";
+  }
 
-  game.dayVotes[voterId] = targetId;
+  // Clicking your current choice again retracts it (removing your vote can drop a target back
+  // below majority); clicking a different one switches. This is how the glow reactively turns off.
+  if (game.dayVotes[voterId] === targetId) {
+    delete game.dayVotes[voterId];
+  } else {
+    game.dayVotes[voterId] = targetId;
+  }
   return null;
 }
 

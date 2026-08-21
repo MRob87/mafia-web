@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Room, RoleConfig } from '@mafia/shared';
+import { NO_VOTE_TARGET } from '@mafia/shared';
 import * as gameManager from './gameManager.js';
 
 let roomCounter = 0;
@@ -245,6 +246,39 @@ describe('submitDayVote', () => {
     game.players[room.hostId].isAlive = false;
     const error = gameManager.submitDayVote(room.roomCode, room.hostId, room.playerIds[1]);
     expect(error).toBe('Dead players cannot vote.');
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('rejects a vote for a player who is not alive', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room);
+    game.phase = 'day_voting';
+    const targetId = room.playerIds[1];
+    game.players[targetId].isAlive = false;
+    const error = gameManager.submitDayVote(room.roomCode, room.hostId, targetId);
+    expect(error).toBe("You can't vote for that player.");
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('accepts an explicit No-vote (no lynch)', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room);
+    game.phase = 'day_voting';
+    expect(gameManager.submitDayVote(room.roomCode, room.hostId, NO_VOTE_TARGET)).toBeNull();
+    expect(game.dayVotes[room.hostId]).toBe(NO_VOTE_TARGET);
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('toggles a vote off when the same target is submitted twice (retract)', () => {
+    const room = makeRoom(5, { mafia: 1, doctor: 1, detective: 1, villager: 2 });
+    const game = gameManager.startGame(room);
+    game.phase = 'day_voting';
+    const targetId = room.playerIds[1];
+    gameManager.submitDayVote(room.roomCode, room.hostId, targetId);
+    expect(game.dayVotes[room.hostId]).toBe(targetId);
+    // Clicking the same target again retracts the vote entirely.
+    gameManager.submitDayVote(room.roomCode, room.hostId, targetId);
+    expect(game.dayVotes[room.hostId]).toBeUndefined();
     gameManager.endGame(room.roomCode);
   });
 });

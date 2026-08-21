@@ -1,4 +1,5 @@
 import type { GameEvent, GameInstance } from '@mafia/shared';
+import { NO_VOTE_TARGET } from '@mafia/shared';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -92,27 +93,34 @@ export function resolveNightActions(game: GameInstance): void {
 
 export function resolveDayVote(game: GameInstance): void {
   const votes = Object.values(game.dayVotes);
-  const eliminated = pluralityTarget(votes);
+  // Most votes wins; a tie eliminates no one. The "no lynch" option participates in the tally
+  // like any candidate, so it can out-vote a player to prevent a lynch — but it's never a person,
+  // so winning it simply means no elimination.
+  const winner = pluralityTarget(votes);
 
-  if (eliminated && game.players[eliminated]?.isAlive) {
-    game.players[eliminated].isAlive = false;
-    game.lastEliminatedId = eliminated;
+  if (winner && winner !== NO_VOTE_TARGET && game.players[winner]?.isAlive) {
+    game.players[winner].isAlive = false;
+    game.lastEliminatedId = winner;
     const event: GameEvent = {
       type: 'death',
       visibility: 'public',
-      payload: { targetId: eliminated, cause: 'vote' },
+      payload: { targetId: winner, cause: 'vote' },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     };
     game.eventLog.push(event);
   } else {
     game.lastEliminatedId = null;
+    const message =
+      votes.length === 0
+        ? 'No votes were cast.'
+        : winner === NO_VOTE_TARGET
+          ? 'The town voted not to eliminate anyone.'
+          : 'The vote was tied — no one was eliminated.';
     game.eventLog.push({
       type: 'system',
       visibility: 'public',
-      payload: {
-        message: votes.length === 0 ? 'No votes were cast.' : 'The vote was tied — no one was eliminated.',
-      },
+      payload: { message },
       timestamp: nowIso(),
       dayNumber: game.dayNumber,
     });

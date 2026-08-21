@@ -6,6 +6,7 @@ import { getSocket } from '../../../lib/socket';
 import { loadSession, clearSession, type AnonSession } from '../../../lib/session';
 import { Avatar, type AvatarState } from '../../../components/Avatar';
 import { PlayerGrid, PlayerCard } from '../../../components/PlayerGrid';
+import { TallyMarks } from '../../../components/TallyMarks';
 import { Rules } from '../../../components/Rules';
 import { RoleRevealCard } from '../../../components/RoleRevealCard';
 import { EliminationOverlay, type EliminationInfo } from '../../../components/EliminationOverlay';
@@ -13,6 +14,7 @@ import { WinScreen } from '../../../components/WinScreen';
 import { PhaseTransitionBanner } from '../../../components/PhaseTransitionBanner';
 import { ToastStack, type ToastMessage } from '../../../components/Toast';
 import { ROLE_COLORS, ROLE_EMOJI } from '../../../lib/roleTheme';
+import { NO_VOTE_TARGET } from '@mafia/shared';
 import type { GameEvent, PlayerView, Room } from '@mafia/shared';
 
 const ACTING_ROLES = new Set(['mafia', 'doctor', 'detective']);
@@ -343,8 +345,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
       getSocket().emit('night:action', { roomCode: session.roomCode, targetId });
       setSelectedTargetId(targetId);
     } else if (view.phase === 'day_voting') {
+      // Voting is a server-side toggle (click your current pick to retract). The selection is
+      // reflected back via view.myDayVote once the server re-broadcasts, so no local state here.
       getSocket().emit('day:vote', { roomCode: session.roomCode, targetId });
-      setSelectedTargetId(targetId);
     }
   }
 
@@ -480,6 +483,12 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     {roleInstructions(view.phase, view.self.role, view.self.isAlive)}
                   </p>
                 )}
+                {view.phase === 'day_voting' && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    A majority is <span className="font-semibold text-slate-300">{view.dayVoteMajorityThreshold}</span>{' '}
+                    vote{view.dayVoteMajorityThreshold === 1 ? '' : 's'}. Click your pick again to take it back.
+                  </p>
+                )}
                 {!view.self.isAlive && (
                   <p className="mt-1 text-sm text-rose-400">You have been eliminated. You can keep watching.</p>
                 )}
@@ -534,9 +543,18 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     const alreadyInvestigated = view.self.role === 'detective' && investigatedById.has(p.userId);
                     const showProtectedLastNight = view.self.isAlive && p.isAlive && protectedLastNight;
                     const selected = p.userId === selectedTargetId;
+                    const isMyVote = view.myDayVote === p.userId;
+                    const voteCount = view.dayVoteCounts[p.userId] ?? 0;
+                    const voteMajority =
+                      view.phase === 'day_voting' && voteCount >= view.dayVoteMajorityThreshold;
 
                     return (
-                      <PlayerCard key={p.userId} highlighted={selected} dimmed={!p.isAlive}>
+                      <PlayerCard
+                        key={p.userId}
+                        highlighted={selected || isMyVote}
+                        glow={voteMajority}
+                        dimmed={!p.isAlive}
+                      >
                         <Avatar id={p.userId} name={p.displayName} size="lg" state={avatarState} />
                         <p className="text-xs leading-tight font-medium">
                           {p.displayName}
@@ -575,13 +593,21 @@ function RoomView({ roomCode }: { roomCode: string }) {
                           </span>
                         ) : null}
 
+                        {view.phase === 'day_voting' && voteCount > 0 && (
+                          <div
+                            className={`flex items-center gap-1.5 ${voteMajority ? 'text-red-400' : 'text-slate-400'}`}
+                          >
+                            <TallyMarks count={voteCount} />
+                            <span className="text-[10px] font-semibold">{voteCount}</span>
+                          </div>
+                        )}
+
                         {canVote && (
                           <button
                             onClick={() => submitTarget(p.userId)}
-                            disabled={selected}
-                            className={`w-full ${selected ? selectedActionButtonClass : actionButtonClass}`}
+                            className={`w-full ${isMyVote ? selectedActionButtonClass : actionButtonClass}`}
                           >
-                            {selected ? '✓ Voted' : 'Vote'}
+                            {isMyVote ? '✓ Voted' : 'Vote'}
                           </button>
                         )}
 
@@ -593,6 +619,38 @@ function RoomView({ roomCode }: { roomCode: string }) {
                       </PlayerCard>
                     );
                   })}
+
+                  {view.phase === 'day_voting' &&
+                    (() => {
+                      const noVoteCount = view.dayVoteCounts[NO_VOTE_TARGET] ?? 0;
+                      const noVoteMajority = noVoteCount >= view.dayVoteMajorityThreshold;
+                      const isMyNoVote = view.myDayVote === NO_VOTE_TARGET;
+                      return (
+                        <PlayerCard highlighted={isMyNoVote} glow={noVoteMajority}>
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-2xl">
+                            🚫
+                          </div>
+                          <p className="text-xs leading-tight font-medium">No vote</p>
+                          <p className="h-3 text-[10px] leading-tight text-slate-500">no lynch</p>
+                          {noVoteCount > 0 && (
+                            <div
+                              className={`flex items-center gap-1.5 ${noVoteMajority ? 'text-red-400' : 'text-slate-400'}`}
+                            >
+                              <TallyMarks count={noVoteCount} />
+                              <span className="text-[10px] font-semibold">{noVoteCount}</span>
+                            </div>
+                          )}
+                          {view.self.isAlive && (
+                            <button
+                              onClick={() => submitTarget(NO_VOTE_TARGET)}
+                              className={`w-full ${isMyNoVote ? selectedActionButtonClass : actionButtonClass}`}
+                            >
+                              {isMyNoVote ? '✓ No vote' : 'No vote'}
+                            </button>
+                          )}
+                        </PlayerCard>
+                      );
+                    })()}
                 </PlayerGrid>
               </div>
 

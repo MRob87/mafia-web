@@ -9,7 +9,7 @@ A real-time, browser-based multiplayer implementation of the classic social-dedu
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4.8-010101?logo=socket.io&logoColor=white">
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-71%20passing-brightgreen?logo=vitest&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-77%20passing-brightgreen?logo=vitest&logoColor=white">
 </p>
 
 > **Live:** [mafiaweb.duckdns.org](https://mafiaweb.duckdns.org)
@@ -124,7 +124,7 @@ Rooms hold **5–12 players**. Roles are assigned at random when the host starts
 | 🌙 Night | host-set (30–120s) | Mafia pick a target, Doctor protects, Detective investigates |
 | 🔎 Night Results | 15s | Everyone learns who (if anyone) died |
 | 💬 Day — Discussion | 180s | Open debate about who to suspect |
-| 🗳️ Day — Voting | 60s | Vote someone out; a tie eliminates no one |
+| 🗳️ Day — Voting | 60s | Vote someone out (or pick **No vote**); live tally marks show each target's count, and a target that reaches a majority of the living glows red. Most votes wins; a tie — or No vote winning — eliminates no one. Click your pick again to retract it. |
 | ⚰️ Elimination | 12s | The eliminated player gets last words |
 
 By default the game **starts on day** — it opens in Discussion so no one dies before anyone has spoken, and the first death (if any) comes from a day vote. The host can turn this off at room creation to use the classic **Night 1** start with a live opening kill.

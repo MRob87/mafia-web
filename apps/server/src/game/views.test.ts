@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { Room, RoleConfig } from '@mafia/shared';
+import { NO_VOTE_TARGET } from '@mafia/shared';
 import * as gameManager from './gameManager.js';
 import { buildPlayerView } from './views.js';
 
@@ -85,6 +86,24 @@ describe('buildPlayerView role reveal', () => {
     const livingEntry = view.players.find((p) => p.userId === villager.userId)!;
     expect(livingEntry.isAlive).toBe(true);
     expect(livingEntry.revealedRole).toBeNull();
+
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('exposes the live day-vote tally, majority threshold, and the viewer\'s own vote', () => {
+    const { room, game, mafia, villager, detective } = startFreshGame();
+    // 6 alive -> majority is 4. Two players vote for the villager; the detective abstains.
+    game.dayVotes = {
+      [mafia[0].userId]: villager.userId,
+      [mafia[1].userId]: villager.userId,
+      [detective.userId]: NO_VOTE_TARGET,
+    };
+
+    const view = buildPlayerView(game, detective.userId);
+    expect(view.dayVoteCounts[villager.userId]).toBe(2);
+    expect(view.dayVoteCounts[NO_VOTE_TARGET]).toBe(1);
+    expect(view.dayVoteMajorityThreshold).toBe(4);
+    expect(view.myDayVote).toBe(NO_VOTE_TARGET);
 
     gameManager.endGame(room.roomCode);
   });

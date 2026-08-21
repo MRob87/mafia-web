@@ -1,6 +1,11 @@
 // Classic 4 role set for MVP. Extend this union in Phase 2 (Jester, Vigilante, Mayor, ...).
 export type Role = 'villager' | 'mafia' | 'doctor' | 'detective';
 
+/** Reserved day-vote target meaning "no lynch" — an explicit abstain a player can cast, shown
+ *  in the tally alongside real players. Not a valid userId (userIds are UUIDs), so it can never
+ *  collide with a real player and it naturally resolves to "eliminate no one". */
+export const NO_VOTE_TARGET = 'no-vote';
+
 export type Phase =
   | 'lobby'
   | 'role_assign'
@@ -151,4 +156,14 @@ export interface PlayerView {
    *  it to disable re-selecting that target (they can't protect the same person, or themselves,
    *  two nights running). null for every other role and on the first night. */
   doctorLastProtectedId: string | null;
+  /** Live day-vote tally: targetId -> number of votes, where targetId is a player's userId or
+   *  NO_VOTE_TARGET. Only targets with at least one vote appear. Public to everyone (day votes
+   *  are open); re-sent on every vote so clients can render live tally marks. */
+  dayVoteCounts: Record<string, number>;
+  /** Votes needed for a majority of the living: floor(aliveCount / 2) + 1. A target whose count
+   *  reaches this is highlighted client-side as the decision-locked (glowing) choice. */
+  dayVoteMajorityThreshold: number;
+  /** This viewer's current day vote (a userId, NO_VOTE_TARGET, or null if they haven't voted) —
+   *  lets the client reflect server truth for their own selection across reconnects. */
+  myDayVote: string | null;
 }
