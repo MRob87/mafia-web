@@ -146,7 +146,7 @@ The game **opens on Day** (Discussion) so no one dies before anyone has spoken �
 - Never announce your role in Public Chat — it removes the deduction from the game.
 - Mafia Chat is private; nothing there should be repeated in Public Chat.
 - The Detective's results are shown only to the Detective — sharing them (truthfully or as a bluff) is a strategic choice.
-- By default, eliminated players' roles stay hidden until the game ends — the host can flip on **Reveal roles on death** at room creation to expose each role the moment its player dies (classic tabletop rules). Either way, the dead shouldn't tip off the living.
+- By default, an eliminated player's role is revealed to everyone the moment they die (classic tabletop rules) — the host can turn **Reveal roles on death** off at room creation to keep every role hidden until the game ends. Either way, the dead shouldn't tip off the living.
 
 </details>
 

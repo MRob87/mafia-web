@@ -117,7 +117,8 @@ export function createRoom(
     nightDurationSeconds: clampNightDuration(nightDurationSecondsInput),
     // Coerce to a strict boolean — never trust the raw client value's type. Default false
     // keeps the historical behavior (roles hidden until game end) unless the host opts in.
-    revealRolesOnDeath: revealRolesOnDeathInput === true,
+    // Defaults ON: only an explicit `false` keeps roles hidden until the game ends.
+    revealRolesOnDeath: revealRolesOnDeathInput !== false,
     createdAt: nowIso(),
   };
 

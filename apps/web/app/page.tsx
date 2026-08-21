@@ -15,7 +15,7 @@ export default function HomePage() {
   const [displayName, setDisplayName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [nightDurationSeconds, setNightDurationSeconds] = useState(60);
-  const [revealRolesOnDeath, setRevealRolesOnDeath] = useState(false);
+  const [revealRolesOnDeath, setRevealRolesOnDeath] = useState(true);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [pending, setPending] = useState(false);
   const toastIdRef = useRef(0);
