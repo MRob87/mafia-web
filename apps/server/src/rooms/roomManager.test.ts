@@ -84,14 +84,22 @@ describe('finalizeRoleConfig', () => {
     expect(config.mafia + config.doctor + config.detective + config.villager).toBe(5);
   });
 
-  it('sizes a full 10-player room to exactly 2 mafia', () => {
+  // Standard ratio breakpoints: 5–6 -> 1 mafia, 7–9 -> 2, 10–12 -> 3.
+  it.each([
+    { players: 6, mafia: 1 },
+    { players: 7, mafia: 2 },
+    { players: 9, mafia: 2 },
+    { players: 10, mafia: 3 },
+    { players: 12, mafia: 3 },
+  ])('sizes a $players-player room to $mafia mafia', ({ players, mafia }) => {
     const { room } = roomManager.createRoom('Host');
-    for (let i = 0; i < 9; i++) roomManager.joinRoom(room.roomCode, `Guest${i}`);
-    expect(room.playerIds).toHaveLength(10);
+    for (let i = 0; i < players - 1; i++) roomManager.joinRoom(room.roomCode, `Guest${i}`);
+    expect(room.playerIds).toHaveLength(players);
 
     const config = roomManager.finalizeRoleConfig(room);
-    expect(config).toEqual({ mafia: 2, doctor: 1, detective: 1, villager: 6 });
-    expect(config.mafia + config.doctor + config.detective + config.villager).toBe(10);
+    expect(config.mafia).toBe(mafia);
+    expect(config).toEqual({ mafia, doctor: 1, detective: 1, villager: players - mafia - 2 });
+    expect(config.mafia + config.doctor + config.detective + config.villager).toBe(players);
   });
 
   it('preserves an explicit override while still recomputing villager as the remainder', () => {

@@ -58,13 +58,20 @@ function sanitizeRoleConfigOverride(override: Partial<RoleConfig> | undefined): 
   return sanitized;
 }
 
-// Classic-4 default ratio: roughly 1 mafia per 4 players, one doctor, one detective
-// once the lobby is large enough to support them; the rest are villagers.
-function defaultRoleConfig(maxPlayers: number): RoleConfig {
-  const mafia = Math.max(1, Math.floor(maxPlayers / 4));
-  const doctor = maxPlayers >= 5 ? 1 : 0;
-  const detective = maxPlayers >= 5 ? 1 : 0;
-  const villager = Math.max(0, maxPlayers - mafia - doctor - detective);
+// Standard Mafia ratio (~1 killer per 3–4 players): 5–6 → 1 mafia, 7–9 → 2, 10–12 → 3. One doctor
+// and one detective once the lobby is large enough; everyone else is a villager. The old
+// floor(count/4) left 7-player games with a single mafia, which plays badly town-favored.
+function defaultMafiaCount(count: number): number {
+  if (count <= 6) return 1;
+  if (count <= 9) return 2;
+  return 3;
+}
+
+function defaultRoleConfig(count: number): RoleConfig {
+  const mafia = defaultMafiaCount(count);
+  const doctor = count >= 5 ? 1 : 0;
+  const detective = count >= 5 ? 1 : 0;
+  const villager = Math.max(0, count - mafia - doctor - detective);
   return { mafia, doctor, detective, villager };
 }
 
