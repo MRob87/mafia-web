@@ -105,21 +105,19 @@ function leavePreviousRoom(socket: IoSocket, nextRoomCode: string): void {
   }
 }
 
-/** Pushes the Mafia team's current night target picks to their private room only. */
-function broadcastMafiaNightStatus(io: IoServer, roomCode: string): void {
+/** Re-sends each living Mafia player their own filtered view — used to push the live night
+ *  tally as teammates pick targets, without touching (or signaling to) anyone else. The tally
+ *  itself lives in PlayerView and is gated to Mafia there, so this only reaches the right eyes. */
+function broadcastMafiaViews(io: IoServer, roomCode: string): void {
   const game = gameManager.getGame(roomCode);
   if (!game) return;
 
-  const targets = game.nightActions
-    .filter((a) => a.role === 'mafia')
-    .map((a) => ({
-      actorId: a.actorId,
-      actorDisplayName: roomManager.getUser(a.actorId)?.displayName ?? 'Unknown',
-      targetId: a.targetId,
-      targetDisplayName: roomManager.getUser(a.targetId)?.displayName ?? 'Unknown',
-    }));
-
-  io.to(mafiaRoomName(roomCode)).emit('game:mafiaNightStatus', { targets });
+  for (const player of Object.values(game.players)) {
+    if (player.role !== 'mafia') continue;
+    const socketId = roomManager.getUser(player.userId)?.socketId;
+    if (!socketId) continue;
+    io.to(socketId).emit('game:view', buildPlayerView(game, player.userId));
+  }
 }
 
 /** Joins every Mafia player's current socket to the private mafia room, so their night
@@ -143,11 +141,9 @@ function joinMafiaRoom(io: IoServer, roomCode: string): void {
 
 export function registerHandlers(io: IoServer): void {
   gameManager.setPhaseChangeListener((roomCode) => {
+    // broadcastGameViews already re-sends every player their view, including Mafia — and since
+    // nightActions was just cleared entering a fresh night, the Mafia tally naturally resets.
     broadcastGameViews(io, roomCode);
-    // Fresh night — nightActions was just cleared, so this resets the mafia's live
-    // target panel instead of leaving the previous night's picks stale on screen.
-    const game = gameManager.getGame(roomCode);
-    if (game?.phase === 'night') broadcastMafiaNightStatus(io, roomCode);
   });
 
   // Rooms with everyone disconnected for a long stretch are abandoned (closing a tab doesn't
@@ -377,7 +373,7 @@ export function registerHandlers(io: IoServer): void {
           return;
         }
         const game = gameManager.getGame(roomCode);
-        if (game?.players[userId]?.role === 'mafia') broadcastMafiaNightStatus(io, roomCode);
+        if (game?.players[userId]?.role === 'mafia') broadcastMafiaViews(io, roomCode);
       })
     );
 

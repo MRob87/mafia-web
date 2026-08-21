@@ -64,9 +64,5 @@ export interface ServerToClientEvents {
   'room:kicked': () => void;
   'chat:message': (msg: { fromUserId: string; displayName: string; text: string; timestamp: string }) => void;
   'mafia:chat': (msg: { fromUserId: string; displayName: string; text: string; timestamp: string }) => void;
-  /** Mafia-only: teammates' current night target picks, live — resets at the start of each night. */
-  'game:mafiaNightStatus': (status: {
-    targets: Array<{ actorId: string; actorDisplayName: string; targetId: string; targetDisplayName: string }>;
-  }) => void;
   'error': (payload: { message: string }) => void;
 }

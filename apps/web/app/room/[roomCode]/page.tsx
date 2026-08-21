@@ -118,9 +118,6 @@ function RoomView({ roomCode }: { roomCode: string }) {
   const [chatInput, setChatInput] = useState('');
   const [mafiaChat, setMafiaChat] = useState<Array<{ userId: string; displayName: string; text: string }>>([]);
   const [mafiaChatInput, setMafiaChatInput] = useState('');
-  const [mafiaTargets, setMafiaTargets] = useState<
-    Array<{ actorId: string; actorDisplayName: string; targetId: string; targetDisplayName: string }>
-  >([]);
   const [lastWordsInput, setLastWordsInput] = useState('');
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -176,7 +173,6 @@ function RoomView({ roomCode }: { roomCode: string }) {
       // that belonged to the previous game instead of leaving it stale on screen.
       if (r.status === 'lobby') {
         setView(null);
-        setMafiaTargets([]);
         hasShownRoleCardRef.current = false;
         setShowRoleCard(false);
         setEliminationInfo(null);
@@ -218,7 +214,6 @@ function RoomView({ roomCode }: { roomCode: string }) {
     socket.on('mafia:chat', (msg) =>
       setMafiaChat((prev) => [...prev, { userId: msg.fromUserId, displayName: msg.displayName, text: msg.text }])
     );
-    socket.on('game:mafiaNightStatus', (status) => setMafiaTargets(status.targets));
 
     return () => {
       socket.off('connect', syncRoom);
@@ -229,7 +224,6 @@ function RoomView({ roomCode }: { roomCode: string }) {
       socket.off('connect_error');
       socket.off('chat:message');
       socket.off('mafia:chat');
-      socket.off('game:mafiaNightStatus');
     };
   }, [roomCode, router]);
 
@@ -547,12 +541,18 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     const voteCount = view.dayVoteCounts[p.userId] ?? 0;
                     const voteMajority =
                       view.phase === 'day_voting' && voteCount >= view.dayVoteMajorityThreshold;
+                    // Mafia-only live night targeting tally (fields are empty for non-Mafia).
+                    const mafiaVoteCount = view.mafiaVoteCounts[p.userId] ?? 0;
+                    const mafiaVoteMajority =
+                      view.phase === 'night' &&
+                      view.self.role === 'mafia' &&
+                      mafiaVoteCount >= view.mafiaVoteMajorityThreshold;
 
                     return (
                       <PlayerCard
                         key={p.userId}
                         highlighted={selected || isMyVote}
-                        glow={voteMajority}
+                        glow={voteMajority || mafiaVoteMajority}
                         dimmed={!p.isAlive}
                       >
                         <Avatar id={p.userId} name={p.displayName} size="lg" state={avatarState} />
@@ -599,6 +599,15 @@ function RoomView({ roomCode }: { roomCode: string }) {
                           >
                             <TallyMarks count={voteCount} />
                             <span className="text-[10px] font-semibold">{voteCount}</span>
+                          </div>
+                        )}
+
+                        {view.phase === 'night' && view.self.role === 'mafia' && mafiaVoteCount > 0 && (
+                          <div
+                            className={`flex items-center gap-1.5 ${mafiaVoteMajority ? 'text-red-400' : 'text-rose-300/80'}`}
+                          >
+                            <TallyMarks count={mafiaVoteCount} />
+                            <span className="text-[10px] font-semibold">{mafiaVoteCount}</span>
                           </div>
                         )}
 
@@ -663,17 +672,10 @@ function RoomView({ roomCode }: { roomCode: string }) {
                     everyone left alive.
                   </p>
 
-                  {mafiaTargets.length > 0 ? (
-                    <ul className="mt-2 space-y-0.5 text-sm text-rose-100">
-                      {mafiaTargets.map((t) => (
-                        <li key={t.actorId}>
-                          {t.actorDisplayName} → {t.targetDisplayName}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-sm text-rose-200/60">No targets picked yet tonight.</p>
-                  )}
+                  <p className="mt-2 text-xs text-rose-200/60">
+                    Tally marks on each player above show your team&apos;s current targets — a target the
+                    Mafia reach a majority on glows red.
+                  </p>
 
                   <div
                     ref={mafiaChatScrollRef}

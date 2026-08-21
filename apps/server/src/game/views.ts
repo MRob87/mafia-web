@@ -44,6 +44,21 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
   const aliveCount = Object.values(game.players).filter((p) => p.isAlive).length;
   const dayVoteMajorityThreshold = Math.floor(aliveCount / 2) + 1;
 
+  // Mafia-only live night tally. Gated on the viewer being Mafia so these counts can NEVER leak
+  // into a non-Mafia view — the night targeting is the private coordination channel.
+  const mafiaVoteCounts: Record<string, number> = {};
+  let mafiaVoteMajorityThreshold = 0;
+  let myMafiaVote: string | null = null;
+  if (self.role === 'mafia') {
+    for (const action of game.nightActions) {
+      if (action.role !== 'mafia') continue;
+      mafiaVoteCounts[action.targetId] = (mafiaVoteCounts[action.targetId] ?? 0) + 1;
+      if (action.actorId === userId) myMafiaVote = action.targetId;
+    }
+    const aliveMafia = Object.values(game.players).filter((p) => p.isAlive && p.role === 'mafia').length;
+    mafiaVoteMajorityThreshold = Math.floor(aliveMafia / 2) + 1;
+  }
+
   return {
     roomCode: game.roomCode,
     phase: game.phase,
@@ -74,5 +89,8 @@ export function buildPlayerView(game: GameInstance, userId: string): PlayerView 
     dayVoteCounts,
     dayVoteMajorityThreshold,
     myDayVote: game.dayVotes[userId] ?? null,
+    mafiaVoteCounts,
+    mafiaVoteMajorityThreshold,
+    myMafiaVote,
   };
 }

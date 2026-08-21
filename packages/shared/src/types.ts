@@ -166,4 +166,13 @@ export interface PlayerView {
   /** This viewer's current day vote (a userId, NO_VOTE_TARGET, or null if they haven't voted) —
    *  lets the client reflect server truth for their own selection across reconnects. */
   myDayVote: string | null;
+  /** Mafia-only live night tally: targetId -> how many Mafia are targeting them. ALWAYS empty
+   *  for non-Mafia viewers — this is the private night coordination channel, so it must never
+   *  appear in anyone else's view. Only targets with at least one vote appear. */
+  mafiaVoteCounts: Record<string, number>;
+  /** Votes needed for a majority of the living Mafia: floor(aliveMafia / 2) + 1. A target that
+   *  reaches it glows red on the Mafia's night grid. 0 for non-Mafia viewers. */
+  mafiaVoteMajorityThreshold: number;
+  /** This Mafia viewer's current night target, or null. null for non-Mafia viewers. */
+  myMafiaVote: string | null;
 }

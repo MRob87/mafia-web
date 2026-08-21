@@ -108,6 +108,30 @@ describe('buildPlayerView role reveal', () => {
     gameManager.endGame(room.roomCode);
   });
 
+  it('exposes the Mafia night tally to Mafia only — never to the town', () => {
+    const { room, game, mafia, villager, detective } = startFreshGame();
+    const [m1, m2] = mafia;
+    game.phase = 'night';
+    // Both Mafia target the villager tonight.
+    game.nightActions = [
+      { actorId: m1.userId, role: 'mafia', targetId: villager.userId, submittedAt: '' },
+      { actorId: m2.userId, role: 'mafia', targetId: villager.userId, submittedAt: '' },
+    ];
+
+    const mafiaView = buildPlayerView(game, m1.userId);
+    expect(mafiaView.mafiaVoteCounts[villager.userId]).toBe(2);
+    expect(mafiaView.mafiaVoteMajorityThreshold).toBe(2); // 2 alive mafia -> floor(2/2)+1
+    expect(mafiaView.myMafiaVote).toBe(villager.userId);
+
+    // A townsperson must never see the Mafia's private night tally.
+    const townView = buildPlayerView(game, detective.userId);
+    expect(townView.mafiaVoteCounts).toEqual({});
+    expect(townView.mafiaVoteMajorityThreshold).toBe(0);
+    expect(townView.myMafiaVote).toBeNull();
+
+    gameManager.endGame(room.roomCode);
+  });
+
   it('still lets living Mafia see their fellow Mafia (dead or alive)', () => {
     const { room, game, mafia } = startFreshGame();
     const [viewer, partner] = mafia;
