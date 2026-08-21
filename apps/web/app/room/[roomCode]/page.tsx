@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getSocket } from '../../../lib/socket';
 import { loadSession, clearSession, type AnonSession } from '../../../lib/session';
-import { Avatar, type AvatarState } from '../../../components/Avatar';
+import { Avatar, AvatarColorProvider, type AvatarState } from '../../../components/Avatar';
 import { PlayerGrid, PlayerCard } from '../../../components/PlayerGrid';
 import { TallyMarks } from '../../../components/TallyMarks';
 import { Rules } from '../../../components/Rules';
@@ -331,6 +331,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
     ? Math.max(0, Math.round((new Date(view.phaseEndsAt).getTime() - now) / 1000))
     : null;
   const nameById = new Map((view?.players ?? []).map((p) => [p.userId, p.displayName]));
+  // Stable roster order for unique avatar colors: the in-game player list once a game is running
+  // (fixed for the whole game), otherwise the lobby roster. Same order for every client.
+  const avatarOrderIds = view ? view.players.map((p) => p.userId) : room?.playerIds ?? [];
   const investigatedById = new Map((view?.investigationHistory ?? []).map((r) => [r.targetId, r.isMafia]));
 
   const isHost = room?.hostId === session.userId;
@@ -394,6 +397,7 @@ function RoomView({ roomCode }: { roomCode: string }) {
   }
 
   return (
+    <AvatarColorProvider orderedIds={avatarOrderIds}>
     <main
       className={`min-h-screen bg-gradient-to-b ${background} px-4 pt-6 pb-40 transition-colors duration-1000 sm:px-6 sm:pt-10 sm:pb-10`}
     >
@@ -804,6 +808,7 @@ function RoomView({ roomCode }: { roomCode: string }) {
         </section>
       </div>
     </main>
+    </AvatarColorProvider>
   );
 }
 
