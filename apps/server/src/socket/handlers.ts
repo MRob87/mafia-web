@@ -395,6 +395,14 @@ export function registerHandlers(io: IoServer): void {
           return;
         }
         const game = gameManager.getGame(roomCode);
+        const room = roomManager.getRoom(roomCode);
+        // Refresh the host's night-action progress on ANY submission — including the doctor's and
+        // detective's, which otherwise pushed no update to the host and left the counter stale.
+        if (game && room) {
+          const hostSocketId = roomManager.getUser(room.hostId)?.socketId;
+          if (hostSocketId) io.to(hostSocketId).emit('game:view', buildPlayerView(game, room.hostId, true));
+        }
+        // Refresh the Mafia's live target tally when one of them acts.
         if (game?.players[userId]?.role === 'mafia') broadcastMafiaViews(io, roomCode);
       })
     );
