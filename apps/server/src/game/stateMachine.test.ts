@@ -15,6 +15,7 @@ function makeGame(overrides: Partial<GameInstance> = {}): GameInstance {
     investigationResults: [],
     winner: null,
     nightDurationMs: 30_000,
+    revealRolesOnDeath: false,
     lastEliminatedId: null,
     ...overrides,
   };

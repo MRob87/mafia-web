@@ -51,6 +51,7 @@ export function startGame(room: Room): GameInstance {
     investigationResults: [],
     winner: null,
     nightDurationMs: room.nightDurationSeconds * 1000,
+    revealRolesOnDeath: room.revealRolesOnDeath,
     lastEliminatedId: null,
   };
 

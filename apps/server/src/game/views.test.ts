@@ -4,7 +4,7 @@ import * as gameManager from './gameManager.js';
 import { buildPlayerView } from './views.js';
 
 let roomCounter = 0;
-function makeRoom(playerCount: number, roleConfig: RoleConfig): Room {
+function makeRoom(playerCount: number, roleConfig: RoleConfig, revealRolesOnDeath = false): Room {
   roomCounter += 1;
   const playerIds = Array.from({ length: playerCount }, (_, i) => `p${i}`);
   return {
@@ -17,6 +17,7 @@ function makeRoom(playerCount: number, roleConfig: RoleConfig): Room {
     playerIds,
     players: playerIds.map((id) => ({ userId: id, displayName: id })),
     nightDurationSeconds: 30,
+    revealRolesOnDeath,
     createdAt: new Date().toISOString(),
   };
 }
@@ -26,8 +27,8 @@ describe('buildPlayerView role reveal', () => {
 
   const roleConfig: RoleConfig = { mafia: 2, doctor: 1, detective: 1, villager: 2 };
 
-  function startFreshGame() {
-    const room = makeRoom(6, roleConfig);
+  function startFreshGame(revealRolesOnDeath = false) {
+    const room = makeRoom(6, roleConfig, revealRolesOnDeath);
     const game = gameManager.startGame(room);
     const players = Object.values(game.players);
     const mafia = players.filter((p) => p.role === 'mafia');
@@ -58,6 +59,31 @@ describe('buildPlayerView role reveal', () => {
     const view = buildPlayerView(game, detective.userId);
     const deadEntry = view.players.find((p) => p.userId === villager.userId)!;
     expect(deadEntry.revealedRole).toBe('villager');
+
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('reveals a dead player\'s role to the town mid-game when reveal-on-death is enabled', () => {
+    const { room, game, villager, detective } = startFreshGame(true);
+    game.players[villager.userId].isAlive = false;
+
+    // Same ongoing-game state as the first test, but the host opted into reveal-on-death,
+    // so the town now sees the eliminated villager's role immediately.
+    const view = buildPlayerView(game, detective.userId);
+    const deadEntry = view.players.find((p) => p.userId === villager.userId)!;
+    expect(deadEntry.isAlive).toBe(false);
+    expect(deadEntry.revealedRole).toBe('villager');
+
+    gameManager.endGame(room.roomCode);
+  });
+
+  it('with reveal-on-death enabled, a LIVING player\'s role still stays hidden', () => {
+    const { room, game, villager, detective } = startFreshGame(true);
+    // villager is still alive — reveal-on-death must not leak the role of the living.
+    const view = buildPlayerView(game, detective.userId);
+    const livingEntry = view.players.find((p) => p.userId === villager.userId)!;
+    expect(livingEntry.isAlive).toBe(true);
+    expect(livingEntry.revealedRole).toBeNull();
 
     gameManager.endGame(room.roomCode);
   });

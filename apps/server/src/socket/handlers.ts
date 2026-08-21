@@ -176,7 +176,8 @@ export function registerHandlers(io: IoServer): void {
         const { room, userId, sessionToken } = roomManager.createRoom(
           payload.displayName,
           payload.roleConfig,
-          payload.nightDurationSeconds
+          payload.nightDurationSeconds,
+          payload.revealRolesOnDeath
         );
         roomManager.attachSocket(userId, socket.id);
         leavePreviousRoom(socket, room.roomCode);

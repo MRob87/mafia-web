@@ -41,6 +41,10 @@ export interface Room {
   players: Array<{ userId: string; displayName: string }>;
   /** How long the night phase lasts once the game starts. Set at room creation; default 30. */
   nightDurationSeconds: number;
+  /** Host option: when true, an eliminated player's role is revealed to everyone the moment
+   *  they die (classic tabletop "flip the card"). When false (default), roles stay hidden until
+   *  the game ends. Set at room creation; locked into the GameInstance when the game starts. */
+  revealRolesOnDeath: boolean;
   createdAt: string;
 }
 
@@ -92,6 +96,8 @@ export interface GameInstance {
   winner: 'mafia' | 'villagers' | null;
   /** Locked in from Room.nightDurationSeconds when the game starts. */
   nightDurationMs: number;
+  /** Locked in from Room.revealRolesOnDeath when the game starts — see that field. */
+  revealRolesOnDeath: boolean;
   /** Who the most recent day vote eliminated, if anyone — they get a last-words window. */
   lastEliminatedId: string | null;
 }

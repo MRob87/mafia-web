@@ -9,7 +9,7 @@ A real-time, browser-based multiplayer implementation of the classic social-dedu
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4.8-010101?logo=socket.io&logoColor=white">
   <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-63%20passing-brightgreen?logo=vitest&logoColor=white">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-65%20passing-brightgreen?logo=vitest&logoColor=white">
 </p>
 
 > **Live:** [mafiaweb.duckdns.org](https://mafiaweb.duckdns.org)
@@ -142,7 +142,7 @@ Rooms hold **5–12 players**. Roles are assigned at random when the host starts
 - Never announce your role in Public Chat — it removes the deduction from the game.
 - Mafia Chat is private; nothing there should be repeated in Public Chat.
 - The Detective's results are shown only to the Detective — sharing them (truthfully or as a bluff) is a strategic choice.
-- Eliminated players' roles stay hidden until the game ends, and the dead shouldn't tip off the living.
+- By default, eliminated players' roles stay hidden until the game ends — the host can flip on **Reveal roles on death** at room creation to expose each role the moment its player dies (classic tabletop rules). Either way, the dead shouldn't tip off the living.
 
 </details>
 

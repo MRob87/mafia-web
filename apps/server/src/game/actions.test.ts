@@ -19,6 +19,7 @@ function makeGame(players: PlayerGameState[], overrides: Partial<GameInstance> =
     investigationResults: [],
     winner: null,
     nightDurationMs: 30_000,
+    revealRolesOnDeath: false,
     lastEliminatedId: null,
     ...overrides,
   };

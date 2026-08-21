@@ -3,7 +3,12 @@ import type { PlayerView, Room, RoleConfig } from './types.js';
 /** Events emitted by the client, handled by the server. */
 export interface ClientToServerEvents {
   'room:create': (
-    payload: { displayName: string; roleConfig?: Partial<RoleConfig>; nightDurationSeconds?: number },
+    payload: {
+      displayName: string;
+      roleConfig?: Partial<RoleConfig>;
+      nightDurationSeconds?: number;
+      revealRolesOnDeath?: boolean;
+    },
     ack: (
       res: { ok: true; room: Room; userId: string; sessionToken: string } | { ok: false; error: string }
     ) => void

@@ -401,6 +401,9 @@ function RoomView({ roomCode }: { roomCode: string }) {
               {room.playerIds.length} / {room.maxPlayers} players (min {room.minPlayers} to start)
             </p>
             <p className="text-sm text-slate-400">Night timer: {room.nightDurationSeconds}s</p>
+            <p className="text-sm text-slate-400">
+              Reveal roles on death: {room.revealRolesOnDeath ? 'On' : 'Off'}
+            </p>
 
             <div className="mt-3">
               <Rules />
